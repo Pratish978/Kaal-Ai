@@ -9,7 +9,7 @@ import { X, Play, Pause, SkipBack, SkipForward } from "lucide-react"
 import AuthModal from "./login-modal"
 
 /* ═══════════════════════════════════════════
-   MEDITATION PLAYER  (file 3 — full code)
+   MEDITATION PLAYER  (Updated Theme)
 ═══════════════════════════════════════════ */
 interface PlayerProps {
   onClose: () => void
@@ -96,23 +96,33 @@ function MeditationPlayer({ onClose, title, audioSrc }: PlayerProps) {
     audioRef.current.currentTime = clickedValue
   }
 
+  const handleSkipBack = () => {
+    if (!audioRef.current) return
+    audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10)
+  }
+
+  const handleSkipForward = () => {
+    if (!audioRef.current) return
+    audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 10)
+  }
+
   if (!isMounted) return null
 
   return (
-    <div className="fixed inset-0 z-[999] bg-[#6B6B6B]/90 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+    <div className="fixed inset-0 z-[999] bg-[#fcfaf6] flex flex-col items-center justify-center p-4">
       {/* Header */}
       <div className="w-full max-w-4xl flex justify-center items-center relative mb-6">
-        <div className="text-center text-white">
-          <h2 className="text-[18px] font-medium">{title}</h2>
-          <p className="text-[12px] opacity-80">Listening Now</p>
+        <div className="text-center text-slate-800">
+          <h2 className="text-[18px] font-semibold">{title}</h2>
+          <p className="text-[12px] text-slate-500">Listening Now</p>
         </div>
-        <button onClick={onClose} className="absolute right-0 text-white p-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <button onClick={onClose} className="absolute right-0 text-slate-600 p-2 cursor-pointer hover:bg-slate-200/50 rounded-full transition-colors">
           <X size={28} />
         </button>
       </div>
 
       {/* Image + controls container */}
-      <div className="relative w-full max-w-[850px] h-[50vh] md:h-auto md:aspect-[16/10] rounded-3xl overflow-hidden shadow-2xl bg-neutral-900">
+      <div className="relative w-full max-w-[850px] h-[50vh] md:h-auto md:aspect-[16/10] rounded-3xl overflow-hidden shadow-xl bg-neutral-100 border border-slate-200">
         <Image 
           src="/meditate.png" 
           alt="Meditation" 
@@ -122,12 +132,12 @@ function MeditationPlayer({ onClose, title, audioSrc }: PlayerProps) {
           priority
         />
 
-        <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+        <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-24 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent">
           <audio ref={audioRef} src={audioSrc} preload="auto" crossOrigin="anonymous" />
 
           {/* Progress Bar */}
           <div className="w-full mb-6">
-            <div className="flex justify-between text-white text-[13px] mb-3">
+            <div className="flex justify-between text-white/90 text-[13px] font-mono mb-3">
               <span>{formatTime(currentTime)}</span>
               <span>{formatTime(duration)}</span>
             </div>
@@ -137,7 +147,7 @@ function MeditationPlayer({ onClose, title, audioSrc }: PlayerProps) {
             >
               <div className="w-full h-1 bg-white/20 rounded-full relative">
                 <div
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#5E5CE6] to-[#BF5AF2] rounded-full"
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full"
                   style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
                 />
               </div>
@@ -145,19 +155,19 @@ function MeditationPlayer({ onClose, title, audioSrc }: PlayerProps) {
           </div>
 
           {/* Controls */}
-          <div className="flex items-center justify-between px-4 text-white">
-            <button className="cursor-pointer hover:opacity-80 transition-opacity">
+          <div className="flex items-center justify-center gap-12 text-white">
+            <button onClick={handleSkipBack} className="cursor-pointer text-white/80 hover:text-white transition-opacity p-2 rounded-full hover:bg-white/10">
               <SkipBack size={26} fill="currentColor" />
             </button>
             <button
               onClick={togglePlay}
-              className="bg-white/20 hover:bg-white/30 p-4 rounded-full backdrop-blur-md cursor-pointer transition-all active:scale-95"
+              className="bg-white text-slate-900 p-5 rounded-full shadow-lg cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
             >
               {isPlaying
-                ? <Pause size={32} fill="currentColor" />
-                : <Play size={32} fill="currentColor" />}
+                ? <Pause size={28} className="fill-current text-slate-900" />
+                : <Play size={28} className="fill-current text-slate-900 ml-0.5" />}
             </button>
-            <button className="cursor-pointer hover:opacity-80 transition-opacity">
+            <button onClick={handleSkipForward} className="cursor-pointer text-white/80 hover:text-white transition-opacity p-2 rounded-full hover:bg-white/10">
               <SkipForward size={26} fill="currentColor" />
             </button>
           </div>
@@ -168,7 +178,7 @@ function MeditationPlayer({ onClose, title, audioSrc }: PlayerProps) {
 }
 
 /* ═══════════════════════════════════════════
-   MEDITATION CARD  (file 1 logic + file 2 UI)
+   MEDITATION CARD
 ═══════════════════════════════════════════ */
 interface MeditationCardProps {
   id: string
@@ -182,11 +192,9 @@ interface MeditationCardProps {
 }
 
 function MeditationCard({
-  id,
   title,
   description,
   duration,
-  isLocked = false,
   isFree = false,
   audioSrc = "",
   onLockedClick,
@@ -210,8 +218,8 @@ function MeditationCard({
         onClick={handleClick}
         className={`bg-white rounded-[32px] p-7 text-left flex flex-col min-h-[240px] w-full transition-all duration-300 ${
           isUnlocked
-            ? "shadow-[0_20px_50px_rgba(0,0,0,0.1)] cursor-pointer active:scale-[0.98]"
-            : "shadow-[0_10px_30px_rgba(0,0,0,0.04)] opacity-90 cursor-pointer hover:shadow-md"
+            ? "shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-slate-100 cursor-pointer active:scale-[0.98]"
+            : "shadow-[0_10px_30px_rgba(0,0,0,0.02)] opacity-90 border border-slate-100 cursor-pointer hover:shadow-md"
         }`}
       >
         <div className="flex items-center justify-between mb-4">
@@ -219,18 +227,18 @@ function MeditationCard({
             <div className="w-8 h-8 relative flex-shrink-0">
               <Image src="/Home1.png" alt="Icon" width={32} height={32} className="object-contain" sizes="32px" priority />
             </div>
-            <h4 className="font-bold text-[#333333] text-[17px] tracking-tight">{title}</h4>
+            <h4 className="font-bold text-slate-800 text-[17px] tracking-tight">{title}</h4>
           </div>
 
           {!isUnlocked && (
-            <span className="text-[12px] font-bold text-neutral-400 bg-neutral-100/70 px-2.5 py-1 rounded-xl">
+            <span className="text-[12px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-xl">
               🔒 Locked
             </span>
           )}
         </div>
 
         <div className="grow">
-          <p className="text-[#7D7D7D] text-[14px] leading-relaxed font-medium max-w-[90%]">
+          <p className="text-slate-500 text-[14px] leading-relaxed font-medium max-w-[90%]">
             {description}
           </p>
         </div>
@@ -241,7 +249,7 @@ function MeditationCard({
           }`}>
             {isUnlocked ? "Free" : "Locked"}
           </div>
-          <span className="text-[13px] text-[#A5C683] font-bold">{duration}</span>
+          <span className="text-[13px] text-slate-400 font-bold">{duration}</span>
         </div>
       </div>
 
@@ -257,7 +265,7 @@ function MeditationCard({
 }
 
 /* ═══════════════════════════════════════════
-   MEDITATION CARDS  (file 1 logic — untouched)
+   MEDITATION CARDS CONTAINER
 ═══════════════════════════════════════════ */
 export function MeditationCards() {
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -268,29 +276,29 @@ export function MeditationCards() {
     {
       id: "morning-energy",
       title: "Morning Energy",
-      description: "Start your day with vitality and clarity.",
-      duration: "8 mins",
+      description: "Start your day with calm focus and energy.",
+      duration: "4:00",
       isFree: true,
       isLocked: false,
       audioSrc: "/Music/morning.mp3",
     },
     {
-      id: "stress-relief",
-      title: "Stress Relief",
-      description: "Release tension and find inner peace.",
-      duration: "12 mins",
-      isFree: false,
-      isLocked: true,
-      audioSrc: "/Music/stress.mp3",
-    },
-    {
       id: "deep-calm",
       title: "Deep Calm",
-      description: "Enter a state of profound tranquility.",
-      duration: "15 mins",
+      description: "Relax your mind and release stress.",
+      duration: "4:04",
       isFree: false,
       isLocked: true,
       audioSrc: "/Music/deep.mp3",
+    },
+    {
+      id: "stress-relief",
+      title: "Stress Relief",
+      description: "A short meditation to release anxiety.",
+      duration: "5:01",
+      isFree: false,
+      isLocked: true,
+      audioSrc: "/Music/stress.mp3",
     },
   ]
 
@@ -302,7 +310,6 @@ export function MeditationCards() {
       const isFree = idx === 0
       const isLocked = !isFree && !isLoggedIn
       
-      // Strict layout fallback parser mapping strategy
       let finalAudioSrc = med.audioSrc
       if (!finalAudioSrc) {
         if (med.id === "stress-relief") {
@@ -316,22 +323,33 @@ export function MeditationCards() {
         }
       }
 
+      // 🌟 INTERCEPT ENGINE: This forces the clean timeline strings to overwrite database data fields
+      let correctedDuration = med.duration
+      if (med.id === "morning-energy") {
+        correctedDuration = "4:00"
+      } else if (med.id === "deep-calm") {
+        correctedDuration = "4:04"
+      } else if (med.id === "stress-relief") {
+        correctedDuration = "5:01"
+      }
+
       return {
         ...med,
         isFree,
         isLocked,
         audioSrc: finalAudioSrc,
+        duration: correctedDuration, // Overwrites backend fields directly
       }
     })
 
   return (
     <>
-      <div className="w-full bg-[#FBF9F6] py-12 px-4">
+      <div className="w-full bg-[#fcfaf6] py-12 px-4">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-xl font-semibold text-center text-[#333] mb-2">
+          <h2 className="text-xl font-bold text-center text-slate-800 mb-2">
             Guided Meditations
           </h2>
-          <p className="text-center text-[#7D7D7D] text-sm mb-8">
+          <p className="text-center text-slate-500 text-sm mb-8">
             Choose a meditation to practice mindfulness and calm
           </p>
 
@@ -347,7 +365,7 @@ export function MeditationCards() {
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-[#7D7D7D]">
+              <p className="text-slate-500">
                 {loading ? "Loading meditations..." : "No meditations available"}
               </p>
             </div>

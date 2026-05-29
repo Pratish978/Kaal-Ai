@@ -27,7 +27,7 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
   const pathname = usePathname()
   const router = useRouter()
   
-  // Render logo only on homepage unless forced by the Chat page configuration override
+  // Render desktop-specific conditional rendering logic
   const shouldShowLogo = (pathname === "/" || forceLogo) && !showBackButton
 
   const { user, isLoggedIn, logout } = useAuth()
@@ -48,9 +48,9 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
       <header className="relative flex items-center justify-between px-4 md:px-16 py-4 md:py-6 bg-transparent w-full z-[200]">
 
         {/* ── LEFT SIDE ── */}
-        <div className="flex flex-1 items-center gap-2">
+        <div className="flex flex-1 items-center gap-2 z-10">
 
-          {/* Mobile hamburger — hidden if back button is showing to keep mobile UI focused */}
+          {/* Mobile hamburger — visible when logo setup requires drawer support */}
           {shouldShowLogo && (
             <button
               className="md:hidden text-gray-800 bg-transparent border-none cursor-pointer p-1 -ml-1"
@@ -80,26 +80,24 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
           </div>
         </div>
 
-        {/* ── CENTRE LOGO (mobile only — hide when showing back context layouts) ── */}
-        {shouldShowLogo && (
-          <div className="md:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <Link href="/">
-              <div className="relative w-20 h-8">
-                <Image
-                  src="/kaal-logo.png"
-                  alt="KAAL AI"
-                  fill
-                  sizes="80px"
-                  className="object-contain"
-                  priority
-                />
-              </div>
-            </Link>
-          </div>
-        )}
+        {/* ── CENTER LOGO (Always rendered & centered on all mobile/responsive sub-views) ── */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto md:hidden">
+          <Link href="/">
+            <div className="relative w-20 h-8">
+              <Image
+                src="/kaal-logo.png"
+                alt="KAAL AI"
+                fill
+                sizes="80px"
+                className="object-contain"
+                priority
+              />
+            </div>
+          </Link>
+        </div>
 
         {/* ── RIGHT SIDE ── */}
-        <div className="flex flex-1 justify-end items-center gap-2">
+        <div className="flex flex-1 justify-end items-center gap-2 z-10">
           {isLoggedIn && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

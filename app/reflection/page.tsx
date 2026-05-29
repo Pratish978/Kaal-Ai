@@ -63,18 +63,18 @@ export default function QuizPage() {
     );
   }
 
-  // View 2: Psychologist Recommendation Page (Shows Back Arrow)
+  // View 2: Psychologist Recommendation Page (Fixed padding & spacing below Navbar)
   if (showPsychologist) {
     return (
       <div className="min-h-screen bg-[#FBF9F6] flex flex-col">
         <Navbar showBackButton={true} customBackAction={() => setShowPsychologist(false)} />
 
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center max-w-4xl mx-auto -translate-y-12">
-          <h1 className="text-4xl md:text-5xl font-serif text-[#333333] mb-4">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 md:py-16 text-center max-w-4xl mx-auto w-full">
+          <h1 className="text-4xl md:text-5xl font-serif text-[#333333] mb-6">
             Here's someone who may be right for you
           </h1>
-          <p className="text-gray-600 text-lg mb-1">Based on what you shared, we found these therapists.</p>
-          <p className="text-[#E9B87D] text-lg mb-10 font-medium">
+          <p className="text-gray-600 text-lg mb-2">Based on what you shared, we found these therapists.</p>
+          <p className="text-[#E9B87D] text-lg mb-12 font-medium">
             Based on your reflection assessment, we recommend speaking with a professional.
           </p>
 
@@ -82,7 +82,7 @@ export default function QuizPage() {
             KAAL does not replace professional therapy. If you're experiencing severe distress, persistent symptoms, or thoughts of self-harm, please reach out to a mental health professional.
           </p>
 
-          <div className="mb-10">
+          <div className="mb-12">
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Professional therapists will be available soon.</h3>
             <p className="text-gray-500">We're connecting you with qualified professionals to support your journey.</p>
           </div>

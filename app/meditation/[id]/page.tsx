@@ -11,15 +11,9 @@ const meditationData: Record<
   string,
   { title: string; duration: number; image: string; sound: string }
 > = {
-  "breathing-calm": {
-    title: "Breathing Calm",
-    duration: 800 ,
-    image: "/meditate.png",
-    sound: "/sounds/breathing.mp3",
-  },
   "morning-energy": {
     title: "Morning Energy",
-    duration: 480,
+    duration: 240,
     image: "/meditate.png",
     sound: "/sounds/morning.mp3",
   },
