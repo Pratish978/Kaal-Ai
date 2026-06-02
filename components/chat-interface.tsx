@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Mic, Send, Save, ArrowLeft } from "lucide-react"
+import { Mic, Send, Save, ArrowLeft, Volume2, Loader2, Square } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 import { WisdomCard } from "@/components/wisdom-card"
 import { useAuth } from "@/contexts/auth-context"
@@ -24,15 +26,26 @@ const initialMessages: Message[] = [
   {
     id: "init",
     role: "assistant",
-    content: "I'm KAAL. This is a space to pause and reflect. What has been on your mind lately?",
+    content: "I'm KAAL AI. This is a space to pause and reflect. What has been on your mind lately?",
   },
 ]
 
+// Standardized UUID v4 fallback to prevent backend ID validation errors
+const generateUUID = () => {
+  if (typeof window !== "undefined" && window.crypto && window.crypto.randomUUID) {
+    return window.crypto.randomUUID()
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 export function ChatInterface({ onBack }: ChatInterfaceProps) {
-  // ── State Hooks ──
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState("")
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showPremiumModal, setShowPremiumModal] = useState(false)
   const [messageCount, setMessageCount] = useState(0)
   const [isRecording, setIsRecording] = useState(false)
   const [isWaitingResponse, setIsWaitingResponse] = useState(false)
@@ -41,57 +54,57 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  
+  const hasInitialized = useRef(false)
 
   const { isLoggedIn, user } = useAuth()
 
-  // ── Entrance Slide Animation ──
   useEffect(() => {
     setIsVisible(true)
   }, [])
 
-  // ── Smooth Scroll Execution ──
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
+  
   useEffect(() => {
     scrollToBottom()
   }, [messages])
 
-  // ── LocalStorage State Sync Handler ──
   useEffect(() => {
-    const openChat = localStorage.getItem("kaal_open_chat")
-    if (openChat) {
-      const chat = JSON.parse(openChat)
-      localStorage.setItem("kaal_active_chat", chat.id)
-      setMessages([
-        { id: crypto.randomUUID(), role: "user", content: chat.title },
-        { id: crypto.randomUUID(), role: "assistant", content: chat.preview },
-      ])
-      localStorage.removeItem("kaal_open_chat")
+    if (hasInitialized.current) return
+    hasInitialized.current = true
+
+    const restoredSessionId = localStorage.getItem("kaal_restored_session")
+    const restoredMessagesStr = localStorage.getItem("kaal_restored_messages")
+
+    if (restoredSessionId && restoredMessagesStr) {
+      try {
+        const parsed = JSON.parse(restoredMessagesStr)
+        const mappedMessages = parsed.map((m: any) => ({
+          id: m.id || generateUUID(), 
+          role: m.role,
+          content: m.content
+        }))
+        
+        if (mappedMessages.length > 0) {
+          setMessages(mappedMessages)
+        }
+
+        localStorage.setItem("kaal_session", restoredSessionId)
+      } catch (e) {
+        console.error("Failed to parse restored messages", e)
+      }
+      
+      localStorage.removeItem("kaal_restored_session")
+      localStorage.removeItem("kaal_restored_messages")
     } else {
-      localStorage.removeItem("kaal_active_chat")
-      setMessages(initialMessages)
+      if (!localStorage.getItem("kaal_session")) {
+        localStorage.setItem("kaal_session", generateUUID())
+      }
     }
   }, [])
 
-  // ── Local Active Session Updates ──
-  const saveChatLocal = (chat: any) => {
-    let chats = JSON.parse(localStorage.getItem("kaal_saved_chats") || "[]")
-    let activeChatId = localStorage.getItem("kaal_active_chat")
-    if (!activeChatId) {
-      activeChatId = crypto.randomUUID()
-      localStorage.setItem("kaal_active_chat", activeChatId)
-      chats.unshift({ id: activeChatId, title: chat.title, preview: chat.preview, timestamp: chat.timestamp })
-    } else {
-      chats = chats.map((c: any) =>
-        c.id === activeChatId ? { ...c, preview: chat.preview, timestamp: chat.timestamp } : c
-      )
-    }
-    chats = chats.slice(0, 4)
-    localStorage.setItem("kaal_saved_chats", JSON.stringify(chats))
-  }
-
-  // ── Voice Transcription Logic (Web Audio API) ──
   const startRecording = async () => {
     if (isRecording) {
       mediaRecorderRef.current?.stop()
@@ -109,7 +122,6 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
       mediaRecorder.onstop = async () => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" })
         
-        // Proxying the request securely to your API route which handles the DEEPGRAM_API_KEY
         const response = await fetch("/api/stt", { 
           method: "POST", 
           body: blob,
@@ -127,11 +139,10 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
     }
   }
 
-  // ── Send Handlers & Async Network Pipeline ──
   const handleSend = async () => {
     if (!input.trim() || isWaitingResponse) return
     const text = input
-    const userMessage: Message = { id: crypto.randomUUID(), role: "user", content: text }
+    const userMessage: Message = { id: generateUUID(), role: "user", content: text }
     setMessages((prev) => [...prev, userMessage])
     setInput("")
     setMessageCount((prev) => prev + 1)
@@ -141,17 +152,16 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
       setTimeout(() => setShowLoginModal(true), 1000)
     }
 
-    const loadingId = crypto.randomUUID()
+    const loadingId = generateUUID()
     setMessages((prev) => [...prev, { id: loadingId, role: "assistant", content: "", isLoading: true }])
 
     try {
       let sessionId = localStorage.getItem("kaal_session")
       if (!sessionId) {
-        sessionId = crypto.randomUUID()
+        sessionId = generateUUID()
         localStorage.setItem("kaal_session", sessionId)
-      }//Remove from local storage 
+      }
 
-      // Using the mapped environment key for client token setup if required by your chat api
       const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || process.env.NEXT_PUBLIC_CHAT_KEY || ""
 
       const response = await fetch("/api/chat", {
@@ -162,7 +172,7 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
           "x-user-name": user?.name || "",
           "x-user-email": user?.email || "",
         },
-        body: JSON.stringify({ session_id: sessionId, message: text }),
+        body: JSON.stringify({ user_id: user?.id || null, session_id: sessionId, message: text }),
       })
 
       if (!response.ok) {
@@ -170,20 +180,20 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
       }
 
       const data = await response.json()
-      const reply = data.reply || "KAAL couldn't respond right now."
+      const reply = data.reply || "KAAL AI couldn't respond right now."
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === loadingId ? { id: crypto.randomUUID(), role: "assistant", content: reply } : msg
+          msg.id === loadingId ? { id: generateUUID(), role: "assistant", content: reply } : msg
         )
       )
       setIsWaitingResponse(false)
-      saveChatLocal({ title: text.slice(0, 40), preview: reply.slice(0, 80), timestamp: new Date().toISOString() })
+      
     } catch (error) {
       console.error("Chat error:", error)
       setIsWaitingResponse(false)
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === loadingId ? { id: crypto.randomUUID(), role: "assistant", content: "⚠️ Server error. Please try again." } : msg
+          msg.id === loadingId ? { id: generateUUID(), role: "assistant", content: "⚠️ Server error. Please try again." } : msg
         )
       )
     }
@@ -191,15 +201,12 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
 
   return (
     <div className="bg-[#FBF9F6] flex-1 flex flex-col items-center px-4 w-full overflow-hidden">
-      
-      {/* ── Main Chat Shell Container ── */}
       <div
         className={cn(
           "bg-[#F6F2ED] w-full max-w-3xl rounded-[40px] px-8 py-10 flex flex-col shadow-sm max-h-[82vh] mt-4 transition-all duration-1000 ease-out relative",
           isVisible ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"
         )}
       >
-        {/* Upper Action Bar for embedded back views */}
         {onBack && (
           <div className="absolute top-6 left-8 z-10">
             <button
@@ -212,16 +219,20 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
           </div>
         )}
 
-        {/* ── Chat Messages Pipeline viewport ── */}
         <div className={cn(
           "w-full overflow-y-auto mb-6 space-y-6 flex flex-col [&::-webkit-scrollbar]:hidden",
           onBack ? "pt-6" : "pt-0"
         )}>
           {messages.map((message, idx) => (
             <div key={message.id}>
-              <MessageBubble message={message} idx={idx} />
+              <MessageBubble 
+                message={message} 
+                idx={idx} 
+                // Unified dynamic tier protection logic applied here
+                isPremium={user?.premium === true || user?.plan === "founding" || user?.plan === "plus"}
+                onShowPaywall={() => setShowPremiumModal(true)}
+              />
               
-              {/* Context Quote Injector */}
               {idx === 4 && (
                 <div className="my-6">
                   <WisdomCard insight="Clarity often appears when the mind becomes still. In silence, we find what matters most." />
@@ -233,7 +244,6 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ── Animated Brand Spinner Loader ── */}
         {isWaitingResponse && (
           <div className="flex flex-col items-center gap-2 mb-4 self-center">
             <img
@@ -245,10 +255,7 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
           </div>
         )}
 
-        {/* ── Bottom Input Action Section ── */}
         <div className="mt-auto w-full max-w-2xl mx-auto">
-          
-          {/* Guest Unauthenticated Fallback Banner */}
           {!isLoggedIn && messages.length > 3 && (
             <button
               onClick={() => setShowLoginModal(true)}
@@ -276,7 +283,6 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
             />
             
             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-5">
-              {/* Speech-To-Text Toggle Button */}
               <button
                 type="button"
                 onClick={startRecording}
@@ -288,7 +294,6 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
                 <Mic className="h-5 w-5" />
               </button>
               
-              {/* Network Payload Dispatch Trigger */}
               <button
                 onClick={handleSend}
                 disabled={isWaitingResponse}
@@ -308,27 +313,118 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
         </div>
       </div>
 
-      {/* ── Medical Disclaimer ── */}
       <div className="text-center py-4">
         <p className="text-xs text-gray-400">
           KAAL AI is not a doctor or therapist.
         </p>
       </div>
 
-      {/* ── Contextual Modal Portals ── */}
       <AuthModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
+      />
+      
+      <PaywallModal 
+        isOpen={showPremiumModal} 
+        onClose={() => setShowPremiumModal(false)} 
       />
     </div>
   )
 }
 
-// ────────────────────── MessageBubble Component ──────────────────────
-function MessageBubble({ message, idx }: { message: Message; idx: number }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// MessageBubble Component
+// ─────────────────────────────────────────────────────────────────────────────
+function MessageBubble({ 
+  message, 
+  idx, 
+  isPremium,
+  onShowPaywall 
+}: { 
+  message: Message; 
+  idx: number; 
+  isPremium: boolean;
+  onShowPaywall: () => void 
+}) {
   const isUser = message.role === "user"
 
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const objectUrlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current)
+      }
+    }
+  }, [])
+
   if (message.isLoading) return null
+
+  const handlePlayVoice = async () => {
+    if (!isPremium) {
+      onShowPaywall()
+      return
+    }
+
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      setIsPlaying(false)
+      return
+    }
+
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0
+      audioRef.current.play().catch((err) => console.error("Audio playback interrupted:", err))
+      return
+    }
+
+    try {
+      setIsGenerating(true)
+      
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: message.content })
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to generate voice")
+      }
+
+      const blob = await res.blob()
+      
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current)
+      }
+      
+      const url = URL.createObjectURL(blob)
+      objectUrlRef.current = url
+      
+      const audio = new Audio(url)
+      
+      audio.onplay = () => setIsPlaying(true)
+      audio.onended = () => setIsPlaying(false)
+      audio.onpause = () => setIsPlaying(false)
+      
+      audioRef.current = audio
+      
+      audio.play().catch((err) => console.error("Audio playback failed:", err))
+
+    } catch (error) {
+      console.error("TTS Playback Error:", error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
 
   return (
     <div
@@ -339,17 +435,115 @@ function MessageBubble({ message, idx }: { message: Message; idx: number }) {
     >
       <div
         className={cn(
-          "bg-[#F0EAE2] rounded-[32px] px-10 py-6 shadow-sm transition-all duration-300 max-w-[85%] w-fit",
-          isUser ? "text-right" : "text-left"
+          "bg-[#F0EAE2] rounded-[32px] px-6 py-6 sm:px-10 shadow-sm transition-all duration-300 w-fit relative",
+          isUser 
+            ? "text-right max-w-[92%] sm:max-w-[85%] md:max-w-[80%]" 
+            : "text-left max-w-[92%] sm:max-w-[85%] md:max-w-[80%]"
         )}
       >
-        <h2 className="text-base font-bold text-[#3D3D3D] mb-1 leading-tight">
-          {isUser ? "You" : idx === 0 ? "I hear you." : "Kaal AI"}
+        <h2 className="text-base font-bold text-[#3D3D3D] mb-2 leading-tight">
+          {isUser ? "You" : idx === 0 ? "I hear you." : "KAAL AI"}
         </h2>
-        <p className="text-[14px] text-[#5A5A5A] leading-relaxed whitespace-pre-wrap">
+        
+        <p className="text-[15px] text-[#5A5A5A] leading-relaxed whitespace-pre-wrap">
           {message.content}
         </p>
+
+        {!isUser && (
+          <div className="mt-5 flex justify-start">
+            <button 
+              onClick={handlePlayVoice}
+              disabled={isGenerating}
+              className={cn(
+                "flex items-center gap-2.5 px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-300 active:scale-95 shadow-sm",
+                isGenerating 
+                  ? "bg-white/60 text-[#E9B87D] border border-[#E9B87D]/30 cursor-wait" 
+                  : isPlaying
+                  ? "bg-[#E9B87D] text-white border border-[#E9B87D] shadow-md"
+                  : "bg-[#FAF9F6] text-[#7A7A7A] border border-gray-200/80 hover:bg-white hover:text-[#E9B87D] hover:border-[#E9B87D]/50 hover:shadow-md"
+              )}
+              title={isPlaying ? "Stop audio" : "Listen to response"}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Generating Audio...</span>
+                </>
+              ) : isPlaying ? (
+                <>
+                  <Square size={14} className="fill-current" />
+                  <span>Playing...</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 size={16} />
+                  <span>Listen to Guidance</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PaywallModal Component
+// ─────────────────────────────────────────────────────────────────────────────
+function PaywallModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const router = useRouter()
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[400px] rounded-[32px] p-6 sm:p-8 bg-white border border-gray-100 shadow-xl gap-0">
+        <DialogHeader className="text-center mb-6">
+          <DialogTitle className="text-2xl font-serif text-gray-800 text-center leading-tight">
+            Unlock KAAL AI Premium
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 mb-8">
+          {[
+            { icon: "🎧", text: "Krishna Voice Guidance" },
+            { icon: "🧘", text: "Full Meditation Library" },
+            { icon: "♾", text: "Unlimited Conversations" }
+          ].map((benefit, i) => (
+            <div key={i} className="flex items-center gap-4 text-sm text-gray-800 font-medium">
+              <div className="bg-[#E9B87D]/10 p-2 rounded-full text-lg w-10 h-10 flex items-center justify-center">
+                {benefit.icon}
+              </div>
+              {benefit.text}
+            </div>
+          ))}
+        </div>
+
+        <div className="text-center mb-8 bg-[#F6F2ED] py-4 rounded-2xl border border-[#E9B87D]/20">
+          <p className="text-3xl font-bold text-gray-800">
+            ₹49<span className="text-sm font-normal text-gray-500">/month</span>
+          </p>
+          <p className="text-xs text-[#E9B87D] font-bold uppercase tracking-widest mt-1">
+            Founding Offer
+          </p>
+        </div>
+
+        <DialogFooter className="flex flex-col sm:flex-col gap-3 w-full">
+          <button 
+            onClick={() => {
+              onClose();
+              router.push('/pricing');
+            }}
+            className="w-full bg-[#E9B87D] hover:bg-[#d4a55d] text-white rounded-full py-4 text-sm font-bold tracking-wider uppercase shadow-md transition-all active:scale-95"
+          >
+            Upgrade Now
+          </button>
+          <button 
+            onClick={onClose}
+            className="w-full text-gray-400 hover:text-gray-600 rounded-full py-3 text-sm font-medium transition-colors"
+          >
+            Maybe Later
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

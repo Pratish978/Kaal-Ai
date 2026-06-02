@@ -7,8 +7,10 @@ import { FeatureCards } from "@/components/feature-cards"
 export default function HomePage() {
   const router = useRouter()
 
-  // ── First file's logic (untouched) ──
+  // ── First file's logic (updated to enforce New Chat rule) ──
   const handleStartConversation = () => {
+    // DESTROY old session to guarantee a fresh MongoDB document
+    localStorage.removeItem("kaal_session")
     router.push("/chat")
   }
 

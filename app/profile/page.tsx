@@ -34,20 +34,15 @@ export default function ProfilePage() {
     minutes: 0
   })
 
+  // Determine if the user is on a premium plan
+  const isPremium = user?.plan === "plus" || user?.plan === "annual"
+
   useEffect(() => {
 
     if (!isLoggedIn) {
       router.push("/")
       return
     }
-
-    /* ---------------- SAVED CHATS ---------------- */
-
-    const chats = JSON.parse(
-      localStorage.getItem("kaal_saved_chats") || "[]"
-    )
-
-    setSavedChats(chats)
 
     /* ---------------- MEDITATION PROGRESS ---------------- */
 
@@ -58,9 +53,57 @@ export default function ProfilePage() {
 
     setProgress(meditation)
 
-    setLoading(false)
+    /* ---------------- SAVED CHATS ---------------- */
 
-  }, [isLoggedIn, router])
+    const fetchSavedChats = async () => {
+      if (!user?.id) return;
+
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
+      const url = `${baseUrl}/api/saved-chats/${user.id}`
+      const apiKey = process.env.NEXT_PUBLIC_API_KEY || ""
+
+      console.log("Saved Chats User:", user?.id)
+      console.log("Saved Chats URL:", url)
+      console.log("Fetching Saved Chats...")
+
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-API-Key": apiKey
+          }
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch saved chats: ${response.statusText}`)
+        }
+
+        const data = await response.json()
+        console.log("Saved Chats Response:", data)
+
+        if (data && data.success && Array.isArray(data.chats)) {
+          const formattedChats: SavedChat[] = data.chats.map((chat: any) => ({
+            id: chat.session_id || chat._id || chat.id,
+            title: chat.title || "Conversation",
+            preview: chat.preview || chat.last_message || chat.lastMessage || "",
+            timestamp: chat.updated_at || chat.createdAt || chat.timestamp || new Date().toISOString()
+          }))
+          setSavedChats(formattedChats)
+        } else {
+          setSavedChats([])
+        }
+      } catch (error) {
+        console.error("Error fetching saved chats:", error)
+        setSavedChats([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSavedChats()
+
+  }, [isLoggedIn, router, user])
 
   const handleLogout = () => {
     logout()
@@ -119,6 +162,36 @@ export default function ProfilePage() {
 
           </section>
 
+          {/* CURRENT PLAN */}
+
+          <section>
+            <Card className="bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md transition-shadow duration-300">
+              <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold mb-1">
+                    Current Plan
+                  </p>
+                  <h3 className={`text-xl font-serif font-bold mb-1 ${isPremium ? 'text-[#E9B87D]' : 'text-gray-800'}`}>
+                    {isPremium ? "KAAL AI Plus ✨" : "FREE"}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {isPremium
+                      ? "Founding Member"
+                      : "You are currently using the free version of KAAL AI."}
+                  </p>
+                </div>
+                {!isPremium && (
+                  <Button
+                    className="bg-[#E9B87D] hover:bg-[#d4a55d] text-white w-full sm:w-auto rounded-full font-medium transition-all"
+                    onClick={() => router.push('/pricing')}
+                  >
+                    Upgrade to Plus →
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+
           {/* SAVED CHATS */}
 
           <section>
@@ -170,14 +243,7 @@ export default function ProfilePage() {
                           size="sm"
                           className="rounded-full shrink-0"
                           onClick={() => {
-
-                            localStorage.setItem(
-                              "kaal_open_chat",
-                              JSON.stringify(chat)
-                            )
-
-                            window.location.href = "/chat"
-
+                            router.push(`/chat?session=${chat.id}`)
                           }}
                         >
                           Open
