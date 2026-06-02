@@ -52,12 +52,20 @@ export default function PricingPage() {
 
       console.log("BACKEND URL =", process.env.NEXT_PUBLIC_BACKEND_URL);
 
-      // Call the restored one-time order creation endpoint
+      // Define standalone headers configuration block to inject required validation keys
+      const orderHeaders = {
+        "Content-Type": "application/json",
+        "X-API-Key": process.env.NEXT_PUBLIC_API_KEY || ""
+      };
+
+      // Added diagnostic telemetry logs
+      console.log("API KEY:", process.env.NEXT_PUBLIC_API_KEY);
+      console.log("REQUEST HEADERS:", orderHeaders);
+
+      // Fixed: Appended explicit security claims header to eliminate 403 Forbidden errors
       const orderRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payment/create-order`, { 
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        }
+        headers: orderHeaders
       });
       
       const orderData = await orderRes.json();

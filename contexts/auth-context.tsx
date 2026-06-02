@@ -23,7 +23,7 @@ export interface User {
   plan?: PlanType 
   isFoundingMember?: boolean 
   premium?: boolean 
-  premium_expires_at?: string // Added to capture real-time time bounds
+  premium_expires_at?: string 
 }
 
 interface UserPreferences {
@@ -40,12 +40,8 @@ interface AuthContextType {
 
   loginWithGoogle: () => Promise<void>
   loginWithEmail: (email: string) => Promise<void>
-
   logout: () => Promise<void>
-
-  updateUserPreference: (
-    preference: "gita" | "no-preference"
-  ) => void
+  updateUserPreference: (preference: "gita" | "no-preference") => void
   isPremiumUser: () => boolean 
   refreshAuth: () => Promise<void> 
 }
@@ -73,19 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /* ---------------- ASYNC PREMIUM SYNCHRONIZATION LOOP ---------------- */
   const refreshAuth = async () => {
-    console.log("=== [AUTH SYNCHRONIZATION LOOP START] ===");
     try {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session?.user) {
-        console.log("[Auth Audit] No active Supabase session found. Setting user to null.");
         setUser(null)
         return
       }
 
       const name = extractUserName(session.user)
       const userEmail = session.user.email || ""
-      console.log(`[Auth Audit] Supabase authenticated user detected: ${userEmail}`);
 
       let currentPlan: PlanType = "free"
       let isFoundingMember = false
@@ -95,7 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Local Cache Fallback Check
       if (typeof window !== "undefined") {
         const localCacheActive = localStorage.getItem("kaal_premium") === "true"
-        console.log(`[Auth Audit] LocalStorage cache flag status: ${localCacheActive}`);
         if (localCacheActive) {
           currentPlan = "founding"
           isFoundingMember = true
@@ -106,7 +98,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (userEmail) {
         try {
           const targetUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/profile?email=${encodeURIComponent(userEmail)}`;
-          console.log(`[Auth Audit] Dispatching profile request to backend URL: ${targetUrl}`);
 
           const profileResponse = await fetch(targetUrl, {
             method: "GET",
@@ -116,23 +107,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             },
           })
 
-          console.log(`[Auth Audit] HTTP response status code: ${profileResponse.status}`);
-
           if (profileResponse.ok) {
             const rawJsonData = await profileResponse.json()
-            console.log("[Auth Audit] Raw JSON payload compiled from endpoint:", rawJsonData);
             
-            // Defensive Parsing: Extract fields safely if payload is nested under a user wrapper object
+            // Defensive Unpacking: Extract target configuration fields
             const mongoData = rawJsonData.user || rawJsonData.data || rawJsonData;
-            console.log("[Auth Audit] Unpacked target configuration fields:", mongoData);
+            
+            // Required Diagnostic Log
+            console.log("PROFILE RESPONSE:", mongoData);
 
             isPremium = mongoData.premium === true || mongoData.premium === "true"
             currentPlan = mongoData.plan || "free"
             premiumExpiresAt = mongoData.premium_expires_at
             isFoundingMember = currentPlan === "founding" || mongoData.isFoundingMember === true || isPremium
             
-            console.log(`[Auth Audit] State variables extracted -> premium: ${isPremium}, plan: ${currentPlan}, premium_expires_at: ${premiumExpiresAt}`);
-
             if (typeof window !== "undefined") {
               if (isPremium) {
                 localStorage.setItem("kaal_premium", "true")
@@ -140,11 +128,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 localStorage.removeItem("kaal_premium")
               }
             }
-          } else {
-            console.warn(`[Auth Audit] Non-200 profile response received. Status: ${profileResponse.status}`);
           }
         } catch (apiError) {
-          console.error("[Auth Audit] MongoDB user profile synchronization failed completely:", apiError)
+          console.error("[Auth Context] MongoDB user profile synchronization failed:", apiError)
         }
       }
 
@@ -159,13 +145,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         premium_expires_at: premiumExpiresAt
       };
 
-      console.log("[Auth Audit] Committing user profile state payload to application memory:", updatedUserPayload);
+      // Required Diagnostic Logs
+      console.log("AUTH STATE:", updatedUserPayload);
+      console.log("PREMIUM STATUS:", isPremium);
+
       setUser(updatedUserPayload)
 
     } catch (error) {
-      console.error("[Auth Audit] Unexpected crash inside execution synchronization flow block:", error)
+      console.error("[Auth Context] Unexpected crash inside synchronization flow:", error)
     }
-    console.log("=== [AUTH SYNCHRONIZATION LOOP END] ===");
   }
 
   /* ---------------- INIT AUTH ---------------- */
@@ -278,15 +266,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user.plan === "annual" ||
       user.isFoundingMember === true;
 
-    // Direct token validation gate factoring timeline expirations securely
     const isTimelineValid = user.premium_expires_at 
       ? new Date(user.premium_expires_at) > now 
       : true;
 
-    const accessResolution = hasPremiumAttributes && isTimelineValid;
-    console.log(`[Auth Audit Gate Check] User: ${user.email} | Qualified: ${hasPremiumAttributes} | Time Valid: ${isTimelineValid} -> Resolved Status: ${accessResolution}`);
-    
-    return accessResolution;
+    return hasPremiumAttributes && isTimelineValid;
   }
 
   return (
