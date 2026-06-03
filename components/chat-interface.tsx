@@ -238,6 +238,7 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
                 message={message} 
                 idx={idx} 
                 isPremium={isPremium}
+                userEmail={user?.email}
                 onShowPaywall={() => setShowPremiumModal(true)}
               />
               
@@ -347,11 +348,13 @@ function MessageBubble({
   message, 
   idx, 
   isPremium,
+  userEmail,
   onShowPaywall 
 }: { 
   message: Message; 
   idx: number; 
   isPremium: boolean;
+  userEmail?: string;
   onShowPaywall: () => void 
 }) {
   const isUser = message.role === "user"
@@ -398,10 +401,18 @@ function MessageBubble({
     try {
       setIsGenerating(true)
       
+      console.log("TTS USER EMAIL:", userEmail);
+
       const res = await fetch("/api/tts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: message.content })
+        headers: { 
+          "Content-Type": "application/json",
+          "x-user-email": userEmail || ""
+        },
+        body: JSON.stringify({ 
+          text: message.content,
+          email: userEmail
+        })
       })
 
       if (!res.ok) {
