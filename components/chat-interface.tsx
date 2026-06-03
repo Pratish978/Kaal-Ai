@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Mic, Send, Save, ArrowLeft, Volume2, Loader2, Square } from "lucide-react"
+import { Mic, Send, Save, ArrowLeft, Volume2, Loader2, Square, Crown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -58,6 +58,15 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
   const hasInitialized = useRef(false)
 
   const { isLoggedIn, user } = useAuth()
+
+  // STRICT TESTING BYPASS RULE (Synced with Profile Page)
+  const isPremium = isLoggedIn && user && (
+    user.email === "bhonglepratish@gmail.com" ||
+    user?.premium === true || 
+    user?.plan === "founding" || 
+    user?.plan === "plus" ||
+    user?.plan === "annual"
+  );
 
   useEffect(() => {
     setIsVisible(true)
@@ -228,8 +237,7 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
               <MessageBubble 
                 message={message} 
                 idx={idx} 
-                // Unified dynamic tier protection logic applied here
-                isPremium={user?.premium === true || user?.plan === "founding" || user?.plan === "plus"}
+                isPremium={isPremium}
                 onShowPaywall={() => setShowPremiumModal(true)}
               />
               
@@ -436,14 +444,23 @@ function MessageBubble({
       <div
         className={cn(
           "bg-[#F0EAE2] rounded-[32px] px-6 py-6 sm:px-10 shadow-sm transition-all duration-300 w-fit relative",
+          isPremium && !isUser ? "border border-amber-500/20 shadow-amber-500/[0.01]" : "",
           isUser 
             ? "text-right max-w-[92%] sm:max-w-[85%] md:max-w-[80%]" 
             : "text-left max-w-[92%] sm:max-w-[85%] md:max-w-[80%]"
         )}
       >
-        <h2 className="text-base font-bold text-[#3D3D3D] mb-2 leading-tight">
-          {isUser ? "You" : idx === 0 ? "I hear you." : "KAAL AI"}
-        </h2>
+        <div className="flex items-center gap-2 mb-2 justify-between">
+          <h2 className="text-base font-bold text-[#3D3D3D] leading-tight">
+            {isUser ? "You" : idx === 0 ? "I hear you." : "KAAL AI"}
+          </h2>
+          
+          {isPremium && !isUser && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-700 text-[9px] font-black uppercase tracking-wider rounded-full">
+              <Crown className="w-2.5 h-2.5 fill-current" /> Premium Seeker
+            </span>
+          )}
+        </div>
         
         <p className="text-[15px] text-[#5A5A5A] leading-relaxed whitespace-pre-wrap">
           {message.content}

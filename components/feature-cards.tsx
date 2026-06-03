@@ -2,6 +2,9 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context" // Auth state sync karne ke liye loop include kiya
+import { Crown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface FeatureCardProps {
   icon: React.ReactNode
@@ -9,35 +12,72 @@ interface FeatureCardProps {
   description: string
   href: string
   buttonText?: string
+  isPremium: boolean // Premium state toggle control forward pipeline
 }
 
-function FeatureCard({ icon, title, description, href, buttonText = "Start" }: FeatureCardProps) {
+function FeatureCard({ 
+  icon, 
+  title, 
+  description, 
+  href, 
+  buttonText = "Start", 
+  isPremium 
+}: FeatureCardProps) {
   const router = useRouter()
 
   return (
-    <div className="bg-white px-8 py-8 rounded-[2rem] shadow-lg shadow-gray-200/50 border border-gray-100 flex flex-col items-start">
+    <div 
+      className={cn(
+        "px-8 py-8 rounded-[2rem] border transition-all duration-500 flex flex-col items-start relative overflow-hidden h-full",
+        isPremium 
+          ? "bg-gradient-to-b from-white to-[#FAF8F5] shadow-xl shadow-amber-500/[0.02] border-amber-500/20" 
+          : "bg-white shadow-lg shadow-gray-200/50 border-gray-100"
+      )}
+    >
+      {/* Decorative top micro border loop strictly for active premium users */}
+      {isPremium && (
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-amber-400 via-amber-200 to-amber-600" />
+      )}
 
-      {/* Icon */}
-      <div className="mb-4">
+      {/* Icon Wrapper with luxury smooth token backdrop container */}
+      <div 
+        className={cn(
+          "mb-4 p-2 rounded-2xl transition-all duration-300",
+          isPremium ? "bg-amber-500/5 shadow-inner" : ""
+        )}
+      >
         {icon}
       </div>
 
       {/* Title */}
-      <h3 className="font-bold text-[#333] text-lg mb-2 tracking-tight">
+      <h3 className="font-bold text-[#333] text-lg mb-2 tracking-tight flex items-center gap-1.5">
         {title}
+        {isPremium && (
+          <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500/10 shrink-0" />
+        )}
       </h3>
 
       {/* Description */}
-      <p className="font-serif text-[15px] text-gray-400 mb-6 leading-snug min-h-[60px]">
+      <p 
+        className={cn(
+          "font-serif text-[15px] mb-6 leading-snug min-h-[60px]",
+          isPremium ? "text-stone-500" : "text-gray-400"
+        )}
+      >
         {description}
       </p>
 
-      {/* Button — first file's Link/href logic preserved */}
+      {/* Button — Dynamic premium design injecting the functional click/href matrix */}
       <button
         onClick={() => router.push(href)}
-        className="w-full bg-[#E9B666] hover:bg-[#dfa755] text-white py-3 rounded-full font-bold text-base transition-colors shadow-sm active:scale-95 cursor-pointer"
+        className={cn(
+          "w-full py-3 rounded-full font-bold text-base transition-all shadow-sm active:scale-95 cursor-pointer border-none text-white",
+          isPremium 
+            ? "bg-gradient-to-r from-[#E9B666] to-[#dfa755] hover:brightness-105 font-black uppercase tracking-wider text-xs shadow-md shadow-amber-500/[0.08]"
+            : "bg-[#E9B666] hover:bg-[#dfa755]"
+        )}
       >
-        {buttonText}
+        {isPremium ? title : buttonText}
       </button>
 
     </div>
@@ -45,6 +85,17 @@ function FeatureCard({ icon, title, description, href, buttonText = "Start" }: F
 }
 
 export function FeatureCards() {
+  const { isLoggedIn, user } = useAuth()
+
+  // STRICT SYSTEM TESTING RULE: Dual bang conversion strictly ensures a clean boolean primitive matrix output
+  const isPremium = !!(isLoggedIn && user && (
+    user.email === "bhonglepratish@gmail.com" ||
+    user?.premium === true || 
+    user?.plan === "founding" || 
+    user?.plan === "plus" ||
+    user?.plan === "annual"
+  ));
+
   // ── First file's data (routes, titles, descriptions) — untouched ──
   const features = [
     {
@@ -75,10 +126,14 @@ export function FeatureCards() {
         If you&apos;d like additional support, these options are available.
       </p>
 
-      {/* Grid */}
+      {/* Grid wrapper architecture */}
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         {features.map((feature) => (
-          <FeatureCard key={feature.title} {...feature} />
+          <FeatureCard 
+            key={feature.title} 
+            {...feature} 
+            isPremium={isPremium} // Now guaranteed to be a solid boolean type primitive
+          />
         ))}
       </div>
 

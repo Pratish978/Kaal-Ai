@@ -81,26 +81,26 @@ const EventsPage = () => {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-[#FDF8F1]">
+    <div className="min-h-screen bg-[#FBF9F6] selection:bg-amber-100">
 
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-6 py-16">
+      <main className="max-w-7xl mx-auto px-6 py-16 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
         {/* Header */}
 
         <div className="text-center mb-16">
 
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-[#2D3436] mb-4">
-            Upcoming Experiences
+          <h1 className="text-4xl md:text-5xl font-serif font-medium text-stone-800 mb-4 tracking-tight">
+            Upcoming <span className="bg-gradient-to-r from-[#E9B666] to-[#dfa755] bg-clip-text text-transparent font-semibold">Experiences</span>
           </h1>
 
-          <p className="text-gray-600 text-lg mb-8">
-            Join guided sessions to reconnect and reset.
+          <p className="text-stone-500 text-lg mb-8 max-w-xl mx-auto font-light leading-relaxed">
+            Join curated guided sessions to reconnect, heal, and reset your core energy fields.
           </p>
 
-          <button className="bg-[#E6BC6B] text-white px-10 py-2.5 rounded-full font-medium hover:opacity-90 transition-all duration-300">
-            All
+          <button className="bg-gradient-to-r from-[#E9B666] to-[#dfa755] text-white px-10 py-2.5 rounded-full font-bold text-xs uppercase tracking-wider shadow-md shadow-amber-500/[0.1] hover:brightness-[1.03] transition-all duration-300">
+            All Sessions
           </button>
 
         </div>
@@ -108,7 +108,7 @@ const EventsPage = () => {
         {/* Error */}
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-200 text-center mb-8">
+          <div className="max-w-md mx-auto bg-red-50 text-red-600 p-4 rounded-2xl border border-red-200 text-center mb-12 font-medium text-sm shadow-sm">
             {error}
           </div>
         )}
@@ -117,18 +117,18 @@ const EventsPage = () => {
 
         {loading ? (
 
-          <div className="flex flex-col items-center justify-center py-20">
+          <div className="flex flex-col items-center justify-center py-32">
 
             <Loader2
-              className="animate-spin text-[#E6BC6B]"
-              size={40}
+              className="animate-spin text-[#E9B666]"
+              size={36}
             />
 
           </div>
 
         ) : (
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
 
             {events.length > 0 ? (
 
@@ -136,24 +136,27 @@ const EventsPage = () => {
 
                 <div
                   key={index}
-                  className="bg-white rounded-[32px] p-8 shadow-sm border border-dashed border-gray-200 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                  className="bg-white rounded-[2rem] p-8 shadow-lg shadow-stone-200/40 border border-stone-100 flex flex-col justify-between transition-all duration-500 hover:shadow-xl hover:shadow-amber-500/[0.02] hover:-translate-y-1 group relative overflow-hidden"
                 >
+
+                  {/* Luxury Top Border Accents */}
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-stone-200/60 to-transparent transition-all duration-500 group-hover:via-amber-400/50" />
 
                   <div>
 
-                    <div className="flex justify-between items-start mb-6">
+                    <div className="flex justify-between items-start gap-4 mb-6">
 
-                      <h3 className="text-2xl font-bold text-[#2D3436] leading-snug">
-                        {event.title || "Experience"}
+                      <h3 className="text-xl font-bold text-stone-800 leading-snug tracking-tight group-hover:text-stone-900 transition-colors">
+                        {event.title || "Experience Session"}
                       </h3>
 
-                      <div className="flex flex-col gap-2 shrink-0">
+                      <div className="flex flex-col gap-1.5 shrink-0 items-end">
 
-                        <span className="bg-[#EBF2FF] text-[#4A86F7] text-xs px-3 py-1 rounded-full border border-[#D0E0FF]">
+                        <span className="bg-stone-50 text-stone-500 text-[11px] font-bold tracking-wider uppercase px-3 py-1 rounded-full border border-stone-200/60">
                           {event.type || "Online"}
                         </span>
 
-                        <span className="bg-[#FFF8EC] text-[#E6BC6B] text-xs px-3 py-1 rounded-full border border-[#FFEBC2]">
+                        <span className="bg-[#FAF8F5] text-[#dfa755] text-xs font-black px-3 py-1 rounded-full border border-amber-500/10 shadow-inner">
                           ₹{event.price || 0}
                         </span>
 
@@ -161,21 +164,22 @@ const EventsPage = () => {
 
                     </div>
 
-                    <div className="space-y-4 mb-8 text-gray-500">
+                    {/* Metadata Protocol Group */}
+                    <div className="space-y-4 mb-8 text-stone-500 text-sm font-medium">
 
-                      <div className="flex items-center gap-3">
-                        <Calendar size={18} />
-                        <span>{event.date || "Everyday"}</span>
+                      <div className="flex items-center gap-3 transition-colors group-hover:text-stone-600">
+                        <Calendar size={16} className="text-[#E9B666] shrink-0" />
+                        <span className="tracking-tight">{event.date || "Everyday"}</span>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <Clock size={18} />
-                        <span>{event.time || "08:30 PM"}</span>
+                      <div className="flex items-center gap-3 transition-colors group-hover:text-stone-600">
+                        <Clock size={16} className="text-[#E9B666] shrink-0" />
+                        <span className="tracking-tight">{event.time || "08:30 PM"}</span>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <MapPin size={18} />
-                        <span>{event.location || "Zoom"}</span>
+                      <div className="flex items-center gap-3 transition-colors group-hover:text-stone-600">
+                        <MapPin size={16} className="text-[#E9B666] shrink-0" />
+                        <span className="tracking-tight line-clamp-1">{event.location || "Digital Workspace"}</span>
                       </div>
 
                     </div>
@@ -199,7 +203,7 @@ const EventsPage = () => {
                       }
 
                     }}
-                    className="w-full bg-[#E6BC6B] text-white py-4 rounded-2xl font-bold transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full bg-[#E9B666] hover:bg-[#dfa755] text-white py-3.5 rounded-full font-bold text-sm transition-all duration-300 shadow-sm active:scale-[0.98] border-none cursor-pointer"
                   >
                     Register now
                   </button>
@@ -210,8 +214,8 @@ const EventsPage = () => {
 
             ) : (
 
-              <div className="col-span-full text-center py-20 text-gray-500">
-                No events available right now.
+              <div className="col-span-full text-center py-24 text-stone-400 font-serif italic text-lg">
+                No experiences available right now. Check back soon.
               </div>
 
             )}

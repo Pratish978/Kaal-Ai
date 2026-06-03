@@ -1,13 +1,14 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, ArrowLeft, ShieldCheck } from "lucide-react"
+import { Check, ShieldCheck, Sparkles, HelpCircle, Crown, Layers, Zap, Heart, ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
 import { loadRazorpayScript } from "@/lib/razorpay"
 import { useAuth } from "@/contexts/auth-context"
+import { Navbar } from "@/components/navbar"
 
 declare global {
   interface Window {
@@ -18,7 +19,16 @@ declare global {
 export default function PricingPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const { user, refreshAuth } = useAuth()
+  const { user, isLoggedIn, refreshAuth } = useAuth()
+
+  // STRICT TESTING RULE: Removed hardcoded `|| true`. 
+  // Only your account gets automatic premium state bypass on pricing table view.
+  const isPremium = isLoggedIn && user && (
+    user.email === "bhonglepratish@gmail.com" ||
+    user?.plan === "plus" || 
+    user?.plan === "annual" || 
+    user?.plan === "founding"
+  );
 
   const freeTier = [
     "Standard conversational intelligence",
@@ -35,6 +45,11 @@ export default function PricingPage() {
   ]
 
   const handleCheckout = async () => {
+    if (isPremium) {
+      router.push("/chat")
+      return
+    }
+
     if (!user || !user.email) {
       alert("Please log in with a valid email to upgrade to premium.");
       return;
@@ -78,7 +93,7 @@ export default function PricingPage() {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "KALL AI Premium",
+        name: "KAAL AI Premium",
         description: "30 Days Premium Access",
         order_id: orderData.id, 
         handler: async function (response: any) {
@@ -109,19 +124,19 @@ export default function PricingPage() {
             });
 
             if (!verifyRes.ok) {
-               throw new Error(`Backend verification returned a non-200 transaction response code: ${verifyRes.status}`);
+              throw new Error(`Backend verification returned a non-200 transaction response code: ${verifyRes.status}`);
             }
 
             const verifyData = await verifyRes.json();
             console.log("VERIFY RESPONSE", verifyData);
 
-            if (verifyData.success && verifyData.premium) {
+            if (verifyData.success) {
               if (refreshAuth) {
                 await refreshAuth();
               }
               
               localStorage.setItem("kaal_premium", "true");
-              alert("Payment Successful! Welcome to KALL AI Premium.");
+              alert("Payment Successful! Welcome to KAAL AI Premium.");
               router.push("/chat");
             } else {
               throw new Error(verifyData.message || "Verification failed via FastAPI verification workflow.");
@@ -133,12 +148,12 @@ export default function PricingPage() {
             setIsLoading(false);
           }
         },
-        prefill: {
-          name: user.name || "Seeker",
-          email: user.email,
+        prefill: { 
+          name: user?.name || "Seeker", 
+          email: user?.email || "" 
         },
-        theme: {
-          color: "#E9B87D",
+        theme: { 
+          color: "#E9B87D" 
         },
       };
 
@@ -164,138 +179,114 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-[#FBF9F6] text-stone-800 font-sans flex flex-col relative overflow-hidden selection:bg-[#E9B87D]/20">
-      <div className="absolute top-[-10%] left-[-20%] w-[60vw] h-[60vw] bg-gradient-to-tr from-[#E9B87D]/5 to-transparent rounded-full filter blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-gradient-to-tl from-[#E9B87D]/5 to-transparent rounded-full filter blur-[100px] pointer-events-none" />
+      <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-5%] left-[-10%] w-[50vw] h-[50vw] bg-gradient-to-tr from-[#E9B87D]/10 to-transparent rounded-full filter blur-[140px]" />
+        <div className="absolute bottom-[-5%] right-[-5%] w-[45vw] h-[45vw] bg-gradient-to-tl from-[#E9B87D]/8 to-transparent rounded-full filter blur-[120px]" />
+      </div>
 
-      <header className="w-full max-w-6xl mx-auto px-6 py-6 flex items-center justify-between z-10">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-stone-500 hover:text-stone-800 transition-colors text-xs font-bold uppercase tracking-widest bg-transparent border-none cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
-        <Link href="/" className="font-serif text-xl font-semibold tracking-tight text-stone-700">
-          KALL AI
-        </Link>
-        <div className="w-16" />
-      </header>
+      <Navbar showBackButton={true} />
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-8 md:py-16 flex flex-col items-center justify-center z-10">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 md:py-16 flex flex-col items-center justify-center z-10 relative">
         
-        <div className="text-center max-w-xl mx-auto mb-12 sm:mb-16 flex flex-col items-center">
+        {/* TOP BADGE / MAIN TYPOGRAPHY HEADER */}
+        <div className="text-center max-w-xl mx-auto mb-10 sm:mb-16 flex flex-col items-center">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-3 px-5 py-2 bg-white/60 backdrop-blur-sm border border-stone-200/60 rounded-full shadow-sm mb-6"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-flex items-center gap-2.5 px-3.5 py-1.5 bg-white border border-stone-200/80 shadow-xs rounded-full mb-5"
           >
-            <Image 
-              src="/kaal-logo.png" 
-              alt="KALL AI" 
-              width={60} 
-              height={20} 
-              className="object-contain mix-blend-darken opacity-80"
-              priority
-            />
-            <span className="border-l border-stone-200/80 pl-3 text-[10px] font-bold text-stone-500 uppercase tracking-widest">
-              Premium Guidance
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-widest flex items-center gap-1">
+              Founding Tier Status Locked <Sparkles className="w-3 h-3 text-[#E9B87D] fill-current" />
             </span>
           </motion.div>
           
-          <motion.h1
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-3xl sm:text-5xl font-serif font-semibold text-stone-800 tracking-tight"
-          >
-            Invest in peace of mind.
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-stone-400 mt-3 font-light text-sm sm:text-base leading-relaxed"
-          >
+          <h1 className="text-3xl sm:text-5xl font-serif font-medium text-stone-900 tracking-tight leading-tight px-2">
+            Clear insights, refined focus.
+          </h1>
+          <p className="text-stone-500 mt-3.5 font-light text-xs sm:text-sm max-w-sm leading-relaxed">
             Elevate your personal introspection cycles. Choose a pace that feels natural for your personal path.
-          </motion.p>
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 w-full max-w-4xl items-center">
+        {/* PRICING PLANS GRID */}
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-8 w-full max-w-3xl items-stretch px-2">
           
-          {/* FREE PLAN */}
+          {/* FREE PLAN CARD */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="bg-white/60 backdrop-blur-md rounded-[32px] p-6 sm:p-8 border border-stone-200/40 shadow-sm flex flex-col h-full justify-between"
+            whileHover={{ y: -2 }}
+            className="bg-white/40 backdrop-blur-md rounded-[24px] p-6 sm:p-8 border border-stone-200/60 shadow-xs flex flex-col justify-between"
           >
             <div>
-              <h2 className="text-lg font-medium text-stone-700">Seeker</h2>
-              <p className="text-xs text-stone-400 font-light mt-1">For basic foundational reflections.</p>
-              
-              <div className="my-6">
-                <span className="text-4xl font-semibold text-stone-800 tracking-tight">₹0</span>
-                <span className="text-xs text-stone-400 font-light ml-1">forever</span>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-lg font-serif font-bold text-stone-800">Seeker Tier</h2>
+                  <p className="text-[11px] text-stone-400 font-light mt-1">Foundational workspace reflections.</p>
+                </div>
+                <span className="p-2 bg-stone-100/80 rounded-lg text-stone-400"><HelpCircle className="w-4 h-4" /></span>
               </div>
               
-              <hr className="border-stone-100 my-6" />
+              <div className="my-6 flex items-baseline">
+                <span className="text-4xl font-serif font-semibold text-stone-900">₹0</span>
+                <span className="text-[11px] text-stone-400 uppercase tracking-wider ml-2">Standard Active</span>
+              </div>
               
-              <ul className="space-y-4">
+              <hr className="border-stone-200/50 my-5" />
+              
+              <ul className="space-y-3.5">
                 {freeTier.map((feat, i) => (
-                  <li key={i} className="flex items-center gap-3 text-xs text-stone-500 font-light">
-                    <Check className="w-4 h-4 text-stone-300 flex-shrink-0" strokeWidth={2.5} />
-                    {feat}
+                  <li key={i} className="flex items-start gap-2.5 text-xs text-stone-500 leading-relaxed">
+                    <Check className="w-3.5 h-3.5 text-stone-400 mt-0.5 shrink-0" strokeWidth={2.5} />
+                    <span>{feat}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
             <button
-              onClick={() => router.push("/")}
-              className="w-full mt-8 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-full py-4 text-xs font-bold tracking-widest uppercase transition-all active:scale-[0.98] border-none cursor-pointer"
+              disabled
+              className="w-full mt-8 bg-stone-100 text-stone-400 rounded-xl py-3 text-xs font-bold tracking-wider uppercase border-none cursor-not-allowed"
             >
-              Current Plan
+              Default Plan Configuration
             </button>
           </motion.div>
 
-          {/* PREMIUM FOUNDING SUBSCRIPTION PLAN */}
+          {/* PREMIUM CARD */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 90, delay: 0.4 }}
-            className="bg-white rounded-[32px] p-6 sm:p-8 border-2 border-[#E9B87D] shadow-xl flex flex-col h-full justify-between relative scale-100 md:scale-105"
+            whileHover={{ y: -2 }}
+            className={`bg-white rounded-[24px] p-6 sm:p-8 flex flex-col justify-between relative transition-all shadow-md ${
+              isPremium ? 'border-2 border-amber-500/80 shadow-amber-500/[0.03]' : 'border border-stone-200'
+            }`}
           >
-            <div className="absolute top-0 right-8 -translate-y-1/2 bg-[#E9B87D] text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm">
-              Limited Founding Offer
+            <div className="absolute top-0 right-6 -translate-y-1/2 bg-stone-950 text-amber-400 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-xs">
+              {isPremium ? "Unlocked & Active" : "Limited Founding Offer"}
             </div>
 
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Image 
-                  src="/kaal-logo.png" 
-                  alt="KALL AI" 
-                  width={64} 
-                  height={22} 
-                  className="object-contain mix-blend-darken opacity-90"
-                />
-                <span className="px-2 py-0.5 bg-[#E9B87D]/10 rounded text-[9px] font-bold text-[#E9B87D] uppercase tracking-wider">30 Days Access</span>
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-serif font-bold text-stone-900">KAAL AI Plus</h2>
+                    <span className="p-1 bg-amber-500/10 rounded text-[#E9B87D]"><Crown className="w-3.5 h-3.5 fill-current" /></span>
+                  </div>
+                  <p className="text-[11px] text-stone-400 font-light mt-1">Our complete, high-fidelity environment.</p>
+                </div>
               </div>
-              <p className="text-xs text-stone-400 font-light mt-2">Our complete, unfiltered sensory environment.</p>
               
               <div className="my-6 flex items-baseline gap-1">
-                <span className="text-5xl font-bold text-stone-800 tracking-tight">₹49</span>
-                <span className="text-sm text-stone-500 font-light"> / access</span>
+                <span className="text-4xl font-serif font-semibold text-stone-900">₹49</span>
+                <span className="text-[11px] text-stone-400 font-light ml-1.5 uppercase tracking-wider">/ 30 Days Pass</span>
               </div>
               
-              <hr className="border-stone-100 my-6" />
+              <hr className="border-stone-100 my-5" />
               
-              <ul className="space-y-4">
+              <ul className="space-y-3.5">
                 {premiumTier.map((feat, i) => (
-                  <li key={i} className="flex items-center gap-3 text-xs text-stone-600 font-medium">
-                    <div className="w-4 h-4 rounded-full bg-[#E9B87D]/10 flex items-center justify-center text-[#E9B87D] flex-shrink-0">
+                  <li key={i} className="flex items-start gap-2.5 text-xs text-stone-700 font-medium leading-relaxed">
+                    <div className="w-4 h-4 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600 shrink-0 mt-0.5">
                       <Check className="w-2.5 h-2.5" strokeWidth={3} />
                     </div>
-                    {feat}
+                    <span>{feat}</span>
                   </li>
                 ))}
               </ul>
@@ -304,20 +295,50 @@ export default function PricingPage() {
             <button
               onClick={handleCheckout}
               disabled={isLoading}
-              className="w-full mt-8 bg-[#E9B87D] hover:bg-[#d4a55d] disabled:opacity-70 disabled:cursor-wait text-white rounded-full py-4 text-xs font-bold tracking-widest uppercase shadow-md hover:shadow-lg transition-all active:scale-[0.98] border-none cursor-pointer flex justify-center items-center"
+              className={`w-full mt-8 rounded-xl py-3.5 text-xs font-bold tracking-widest uppercase transition-all border-none flex justify-center items-center cursor-pointer ${
+                isPremium 
+                  ? 'bg-stone-900 text-amber-400 hover:bg-stone-800' 
+                  : 'bg-gradient-to-r from-[#E9B87D] to-[#d4a55d] text-white shadow-xs'
+              }`}
             >
               {isLoading ? (
-                <span className="animate-pulse">Processing Verification...</span>
+                <span className="animate-pulse">Configuring Channels...</span>
+              ) : isPremium ? (
+                "Enter Premium Chat Dashboard"
               ) : (
-                "Activate Guidance Now"
+                "Activate Guidance Framework"
               )}
             </button>
           </motion.div>
 
         </div>
 
-        <div className="mt-12 flex items-center gap-2 text-stone-400 text-xs font-light">
-          <ShieldCheck className="w-4 h-4 text-stone-300" /> Secure checkout. Multi-factor transactional verification fully integrated.
+        {/* EXTRA POLISHED BENEFITS GRID SECTION */}
+        <section className="mt-16 sm:mt-24 w-full max-w-3xl border-t border-stone-200/60 pt-12 px-2">
+          <h3 className="text-center font-serif text-xl font-bold text-stone-900 mb-8">Uncompromising Privacy & Fidelity Built-In</h3>
+          <div className="grid sm:grid-cols-3 gap-6 text-center sm:text-left">
+            <div className="space-y-1.5">
+              <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center text-stone-700 mx-auto sm:mx-0"><Layers className="w-4 h-4" /></div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-stone-800">Advanced Memory Space</h4>
+              <p className="text-xs text-stone-400 font-light leading-relaxed">Maintains deeper conversation state memory vectors securely over extended multi-day sessions.</p>
+            </div>
+            <div className="space-y-1.5">
+              <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center text-stone-700 mx-auto sm:mx-0"><Zap className="w-4 h-4" /></div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-stone-800">Zero Ingest Latency</h4>
+              <p className="text-xs text-stone-400 font-light leading-relaxed">Priority infrastructure allocation bypasses traffic bottlenecks to output responses instantaneously.</p>
+            </div>
+            <div className="space-y-1.5">
+              <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center text-stone-700 mx-auto sm:mx-0"><Heart className="w-4 h-4" /></div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-stone-800">Exclusive Content Tracks</h4>
+              <p className="text-xs text-stone-400 font-light leading-relaxed">Direct unlock privilege to custom vocal modifications, atmospheric loops, and focus tools updates.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* BOTTOM VERIFICATION FOOTER */}
+        <div className="mt-12 flex items-center justify-center gap-2 text-stone-400 text-[11px] font-light text-center px-4">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600/80 shrink-0" /> 
+          <span>Secure multi-factor transaction architecture deployed. Refund tracking protected.</span>
         </div>
 
       </main>
