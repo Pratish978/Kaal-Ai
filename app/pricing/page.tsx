@@ -37,7 +37,7 @@ export default function PricingPage() {
   ]
 
   const premiumTier = [
-    "Ultra-premium ElevenLabs Krishna Voice",
+    "Ultra-premium  Krishna Voice",
     "Full immersive meditation audio suite",
     "Unrestricted conversation token limits",
     "Exclusive early access to upcoming features",

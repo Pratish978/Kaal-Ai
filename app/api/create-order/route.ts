@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     });
 
     const order = await razorpay.orders.create({
-      amount: 100, // ₹49
+      amount: 4900, // ₹49
       currency: "INR",
       receipt: `kaal_${Date.now()}`,
     });
