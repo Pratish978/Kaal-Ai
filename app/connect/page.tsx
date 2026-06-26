@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { TherapistCard } from "@/components/therapist-card"
 import { Button } from "@/components/ui/button"
-import { LoginModal } from "@/components/login-modal"
+import LoginModal  from "@/components/login-modal"
 import { useAuth } from "@/contexts/auth-context"
 
 // Therapist data will be populated from backend API
