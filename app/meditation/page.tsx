@@ -13,7 +13,7 @@ export default function MeditationPage() {
 
   // STRICT PREMIUM SELECTION CHECKER SYSTEM
   const isPremium = isLoggedIn && user && (
-    user.email === "bhonglepratish@gmail.com" ||
+    user.email === "bhonglepratish@gmail.com" || "piyu232004@gmail.com"||
     user?.premium === true || 
     user?.plan === "founding" || 
     user?.plan === "plus" ||

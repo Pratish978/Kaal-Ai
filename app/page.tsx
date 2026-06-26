@@ -13,7 +13,7 @@ export default function HomePage() {
 
   // STRICT PREMIUM USER CHECK (Synced with your testing profile & bypass rules)
   const isPremium = isLoggedIn && user && (
-    user.email === "bhonglepratish@gmail.com" ||
+    user.email === "bhonglepratish@gmail.com" || "piyu232004@gmail.com"||
     user?.premium === true || 
     user?.plan === "founding" || 
     user?.plan === "plus" ||

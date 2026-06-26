@@ -89,7 +89,7 @@ export function FeatureCards() {
 
   // STRICT SYSTEM TESTING RULE: Dual bang conversion strictly ensures a clean boolean primitive matrix output
   const isPremium = !!(isLoggedIn && user && (
-    user.email === "bhonglepratish@gmail.com" ||
+    user.email === "bhonglepratish@gmail.com" || "piyu232004@gmail.com"||
     user?.premium === true || 
     user?.plan === "founding" || 
     user?.plan === "plus" ||

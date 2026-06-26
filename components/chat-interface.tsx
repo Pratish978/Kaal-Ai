@@ -61,7 +61,7 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
 
   // STRICT TESTING BYPASS RULE (Synced with Profile Page)
   const isPremium = isLoggedIn && user && (
-    user.email === "bhonglepratish@gmail.com" ||
+    user.email === "bhonglepratish@gmail.com" || "piyu232004@gmail.com"||
     user?.premium === true || 
     user?.plan === "founding" || 
     user?.plan === "plus" ||

@@ -44,7 +44,7 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
   }, [user, isLoggedIn])
 
   // STRICT TESTING RULE: Only your exact email gets premium layout token override
-  const isTargetPremiumUser = isLoggedIn && user && user.email === "bhonglepratish@gmail.com";
+  const isTargetPremiumUser = isLoggedIn && user && user.email === "bhonglepratish@gmail.com"|| "piyu232004@gmail.com";
 
   const handleBackNavigation = () => {
     if (customBackAction) {

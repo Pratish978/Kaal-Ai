@@ -336,7 +336,7 @@ export function MeditationCards() {
 
   // STRICT PREMIUM SYNCHRONIZATION MATRIX
   const isPremiumUser = isLoggedIn && user && (
-    user.email === "bhonglepratish@gmail.com" ||
+    user.email === "bhonglepratish@gmail.com" || "piyu232004@gmail.com"||
     user?.premium === true || 
     user?.plan === "founding" || 
     user?.plan === "plus" ||

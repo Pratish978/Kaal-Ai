@@ -24,7 +24,7 @@ export default function PricingPage() {
   // STRICT TESTING RULE: Removed hardcoded `|| true`. 
   // Only your account gets automatic premium state bypass on pricing table view.
   const isPremium = isLoggedIn && user && (
-    user.email === "bhonglepratish@gmail.com" ||
+    user.email === "bhonglepratish@gmail.com" || "piyu232004@gmail.com"||
     user?.plan === "plus" || 
     user?.plan === "annual" || 
     user?.plan === "founding"
