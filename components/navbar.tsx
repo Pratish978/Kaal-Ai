@@ -331,21 +331,24 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
                   </button>
                   <hr className={isTargetPremiumUser ? 'border-amber-200/60 my-2' : 'border-gray-200 my-2'} />
                   
-                  {!isTargetPremiumUser ? (
-                    <button 
-                      onClick={() => handleMobileNavigate("/pricing")} 
-                      className="text-left text-xl text-amber-600 bg-amber-500/5 p-3 rounded-xl border border-amber-500/10 font-bold w-full flex items-center gap-2"
-                    >
-                      <Crown className="w-5 h-5 text-amber-500" /> Plans &amp; Pricing
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleMobileNavigate("/pricing")} 
-                      className="text-left text-xl text-amber-800 bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-100 p-4 rounded-xl border border-amber-200 shadow-sm font-bold w-full flex items-center gap-2"
-                    >
-                      <CalendarCheck className="w-5 h-5 text-amber-600" /> Check Validity &amp; Plans
-                    </button>
-                  )}
+                  {/* HIDDEN IN MOBILE DRAWER: Wrapped with 'hidden md:flex' */}
+                  <div className="hidden md:flex">
+                    {!isTargetPremiumUser ? (
+                      <button 
+                        onClick={() => handleMobileNavigate("/pricing")} 
+                        className="text-left text-xl text-amber-600 bg-amber-500/5 p-3 rounded-xl border border-amber-500/10 font-bold w-full flex items-center gap-2"
+                      >
+                        <Crown className="w-5 h-5 text-amber-500" /> Plans &amp; Pricing
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handleMobileNavigate("/pricing")} 
+                        className="text-left text-xl text-amber-800 bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-100 p-4 rounded-xl border border-amber-200 shadow-sm font-bold w-full flex items-center gap-2"
+                      >
+                        <CalendarCheck className="w-5 h-5 text-amber-600" /> Check Validity &amp; Plans
+                      </button>
+                    )}
+                  </div>
                 </nav>
               </div>
             ) : (
@@ -359,12 +362,15 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
                 >
                   Log in
                 </button>
-                <button 
-                  onClick={() => handleMobileNavigate("/pricing")} 
-                  className="text-left text-xl text-amber-600 bg-transparent border-none cursor-pointer font-bold flex items-center gap-2"
-                >
-                  <Crown className="w-5 h-5 text-amber-500" /> Plans &amp; Pricing
-                </button>
+                {/* HIDDEN IN MOBILE DRAWER: Wrapped with 'hidden md:flex' */}
+                <div className="hidden md:flex">
+                  <button 
+                    onClick={() => handleMobileNavigate("/pricing")} 
+                    className="text-left text-xl text-amber-600 bg-transparent border-none cursor-pointer font-bold flex items-center gap-2"
+                  >
+                    <Crown className="w-5 h-5 text-amber-500" /> Plans &amp; Pricing
+                  </button>
+                </div>
               </div>
             )}
           </div>
