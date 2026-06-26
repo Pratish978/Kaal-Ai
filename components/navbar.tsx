@@ -32,8 +32,16 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
   const { user, isLoggedIn, logout } = useAuth()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isPremium, setIsPremium] = useState(false)
 
-  // Fix: Corrected logic for premium check
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const premiumStatus = localStorage.getItem("kaal_premium") === "true"
+      setIsPremium(premiumStatus)
+    }
+  }, [user, isLoggedIn])
+
+  // Fixed logic for multi-user premium check
   const isTargetPremiumUser = isLoggedIn && user && (user.email === "bhonglepratish@gmail.com" || user.email === "piyu232004@gmail.com");
 
   const handleBackNavigation = () => {
@@ -86,7 +94,7 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
         </div>
 
         {/* ── CENTER LOGO ── */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none md:hidden">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto md:hidden">
           <Link href="/">
             <div className="relative w-20 h-8">
               <Image src="/kaal-logo.png" alt="KAAL AI" fill sizes="80px" className="object-contain" priority />
@@ -95,7 +103,7 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
         </div>
 
         {/* ── RIGHT SIDE ── */}
-        <div className="flex flex-1 justify-end items-center gap-2 z-10">
+        <div className="flex flex-1 justify-end items-center gap-2 md:gap-6 z-10">
           {isLoggedIn && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -117,16 +125,36 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
                   )}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 backdrop-blur-xl rounded-2xl shadow-2xl py-4 px-2 bg-white/95">
-                {/* ... (Dropdown items remain the same) ... */}
-                <DropdownMenuItem onSelect={() => router.push("/profile")}>Profile</DropdownMenuItem>
-                <DropdownMenuItem onSelect={logout}>Log out</DropdownMenuItem>
+              <DropdownMenuContent align="end" className={`w-64 backdrop-blur-xl rounded-2xl shadow-2xl py-4 px-2 animate-in fade-in slide-in-from-top-2 duration-200 bg-white/95 ${isTargetPremiumUser ? 'border border-amber-200/80' : 'border border-stone-200/60'}`}>
+                <div className={`px-3 py-2.5 mb-2 rounded-xl flex items-center justify-between ${isTargetPremiumUser ? 'bg-gradient-to-r from-amber-500/10 to-orange-500/5 border border-amber-200/40' : 'bg-stone-50'}`}>
+                  <div className="truncate pr-2">
+                    <p className={`text-xs font-bold truncate ${isTargetPremiumUser ? 'text-amber-900' : 'text-stone-800'}`}>{user.name}</p>
+                    <p className={`text-[10px] truncate ${isTargetPremiumUser ? 'text-amber-700/70' : 'text-stone-400'}`}>{user.email}</p>
+                  </div>
+                  {isTargetPremiumUser ? (
+                    <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[9px] font-black uppercase tracking-wider rounded-md flex items-center gap-1 shrink-0 shadow-sm">
+                      <Crown className="w-2.5 h-2.5 fill-current" /> Premium
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 bg-stone-100 text-stone-500 text-[9px] font-medium uppercase tracking-wider rounded-md shrink-0">Free Tier</span>
+                  )}
+                </div>
+                <DropdownMenuItem onSelect={() => router.push("/profile")} className={`cursor-pointer rounded-lg flex items-center text-sm font-medium ${isTargetPremiumUser ? 'text-amber-900/80 hover:text-amber-950 hover:bg-amber-500/10' : 'text-stone-600 hover:text-stone-950 hover:bg-stone-50'}`}>
+                  <User className={`h-4 w-4 mr-2 ${isTargetPremiumUser ? 'text-amber-500' : 'text-stone-400'}`} /> Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => router.push("/history")} className={`cursor-pointer rounded-lg flex items-center text-sm font-medium ${isTargetPremiumUser ? 'text-amber-900/80 hover:text-amber-950 hover:bg-amber-500/10' : 'text-stone-600 hover:text-stone-950 hover:bg-stone-50'}`}>
+                  <History className={`h-4 w-4 mr-2 ${isTargetPremiumUser ? 'text-amber-500' : 'text-stone-400'}`} /> History
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className={isTargetPremiumUser ? 'bg-amber-100 my-2' : 'bg-stone-100 my-2'} />
+                <DropdownMenuItem onSelect={logout} className="cursor-pointer rounded-lg flex items-center text-stone-500 hover:text-red-600 hover:bg-red-50/50">
+                  <LogOut className="h-4 w-4 mr-2" /> Log out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            /* FIXED: Wrapped in hidden md:flex so it disappears on small screens */
-            <div className="hidden md:flex items-center gap-6">
-              <Link href="/pricing" className="text-sm font-medium text-gray-500 hover:text-black transition-colors flex items-center gap-1.5">
+            <div className="flex items-center gap-2 md:gap-6">
+              {/* Pricing is hidden on small screens to prevent overlap */}
+              <Link href="/pricing" className="hidden sm:flex text-sm font-medium text-gray-500 hover:text-black transition-colors items-center gap-1.5">
                 <Crown className="w-3.5 h-3.5 text-amber-500" /> Pricing
               </Link>
               <button
@@ -140,7 +168,7 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
         </div>
       </header>
 
-      {/* ... (Mobile Drawer implementation remains the same) ... */}
+      {/* Mobile Drawer and AuthModal omitted for brevity, logic remains the same */}
       <AuthModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
     </>
   )
