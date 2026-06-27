@@ -30,6 +30,10 @@ const initialMessages: Message[] = [
   },
 ]
 
+// Rotating presence captions shown while KAAL is composing a reply.
+// Cycled, not random, so the pacing itself feels considered rather than glitchy.
+const PRESENCE_CAPTIONS = ["Listening...", "Reflecting...", "Finding the words..."]
+
 // Standardized UUID v4 fallback to prevent backend ID validation errors
 const generateUUID = () => {
   if (typeof window !== "undefined" && window.crypto && window.crypto.randomUUID) {
@@ -50,6 +54,9 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [isWaitingResponse, setIsWaitingResponse] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
+  const [isInputFocused, setIsInputFocused] = useState(false)
+  const [justSent, setJustSent] = useState(false)
+  const [presenceCaptionIdx, setPresenceCaptionIdx] = useState(0)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -60,12 +67,15 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
   const { isLoggedIn, user } = useAuth()
 
   // STRICT TESTING BYPASS RULE (Synced with Profile Page)
-  const isPremium = isLoggedIn && user && (
-    user.email === "bhonglepratish@gmail.com" || "piyu232004@gmail.com"||
-    user?.premium === true || 
-    user?.plan === "founding" || 
-    user?.plan === "plus" ||
-    user?.plan === "annual"
+  const isPremium = Boolean(
+    isLoggedIn && user && (
+      user.email === "bhonglepratish@gmail.com" ||
+      user.email === "piyu232004@gmail.com" ||
+      user?.premium === true ||
+      user?.plan === "founding" ||
+      user?.plan === "plus" ||
+      user?.plan === "annual"
+    )
   );
 
   useEffect(() => {
@@ -79,6 +89,19 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Cycle the presence caption slowly while waiting for a reply — paced like a breath,
+  // not a generic "typing" flicker.
+  useEffect(() => {
+    if (!isWaitingResponse) {
+      setPresenceCaptionIdx(0)
+      return
+    }
+    const interval = setInterval(() => {
+      setPresenceCaptionIdx((prev) => (prev + 1) % PRESENCE_CAPTIONS.length)
+    }, 2200)
+    return () => clearInterval(interval)
+  }, [isWaitingResponse])
 
   useEffect(() => {
     if (hasInitialized.current) return
@@ -157,6 +180,10 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
     setMessageCount((prev) => prev + 1)
     setIsWaitingResponse(true)
 
+    // Brief send pulse on the composer — tactile confirmation the message left.
+    setJustSent(true)
+    setTimeout(() => setJustSent(false), 400)
+
     if (messageCount >= 1 && messageCount < 2 && !isLoggedIn) {
       setTimeout(() => setShowLoginModal(true), 1000)
     }
@@ -210,9 +237,32 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
 
   return (
     <div className="bg-[#FBF9F6] flex-1 flex flex-col items-center px-4 w-full overflow-hidden">
+      <style>{`
+        @keyframes kaal-breathe {
+          0%, 100% { transform: scale(0.85); opacity: 0.35; }
+          50% { transform: scale(1.15); opacity: 1; }
+        }
+        @keyframes kaal-caption-fade {
+          0% { opacity: 0; transform: translateY(2px); }
+          15%, 85% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-2px); }
+        }
+        @keyframes kaal-rise-in {
+          from { opacity: 0; transform: translateY(10px) scale(0.985); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .kaal-message-enter {
+          animation: kaal-rise-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .kaal-message-enter { animation: none; }
+          .kaal-breathe { animation: none !important; }
+        }
+      `}</style>
+
       <div
         className={cn(
-          "bg-[#F6F2ED] w-full max-w-3xl rounded-[40px] px-8 py-10 flex flex-col shadow-sm max-h-[82vh] mt-4 transition-all duration-1000 ease-out relative",
+          "bg-[#F6F2ED] w-full max-w-3xl rounded-[40px] px-8 py-10 flex flex-col shadow-[0_8px_40px_-12px_rgba(120,90,50,0.12)] max-h-[82vh] mt-4 transition-all duration-1000 ease-out relative",
           isVisible ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"
         )}
       >
@@ -229,17 +279,22 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
         )}
 
         <div className={cn(
-          "w-full overflow-y-auto mb-6 space-y-6 flex flex-col [&::-webkit-scrollbar]:hidden",
+          "w-full overflow-y-auto mb-6 space-y-7 flex flex-col [&::-webkit-scrollbar]:hidden",
           onBack ? "pt-6" : "pt-0"
         )}>
           {messages.map((message, idx) => (
-            <div key={message.id}>
+            <div
+              key={message.id}
+              className={message.isLoading ? "" : "kaal-message-enter"}
+              style={message.isLoading ? undefined : { animationDelay: "40ms" }}
+            >
               <MessageBubble 
                 message={message} 
                 idx={idx} 
                 isPremium={isPremium}
                 userEmail={user?.email}
                 onShowPaywall={() => setShowPremiumModal(true)}
+                presenceCaption={PRESENCE_CAPTIONS[presenceCaptionIdx]}
               />
               
               {idx === 4 && (
@@ -253,22 +308,11 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {isWaitingResponse && (
-          <div className="flex flex-col items-center gap-2 mb-4 self-center">
-            <img
-              src="/logo.png"
-              alt="Loading"
-              className="w-5 h-5 animate-spin opacity-30"
-              style={{ animationDuration: "3s" }}
-            />
-          </div>
-        )}
-
         <div className="mt-auto w-full max-w-2xl mx-auto">
           {!isLoggedIn && messages.length > 3 && (
             <button
               onClick={() => setShowLoginModal(true)}
-              className="w-full mb-3 py-2 px-3 bg-white/70 rounded-full text-sm text-gray-400 hover:text-gray-600 flex items-center justify-center gap-2 border border-dashed border-gray-200"
+              className="w-full mb-3 py-2 px-3 bg-white/70 rounded-full text-sm text-gray-400 hover:text-gray-600 flex items-center justify-center gap-2 border border-dashed border-gray-200 transition-colors"
             >
               <Save className="h-4 w-4" />
               Save chat to continue later
@@ -281,6 +325,8 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault()
@@ -288,7 +334,12 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
                 }
               }}
               placeholder="Type here..."
-              className="w-full bg-[#FAF9F6] border border-gray-100 rounded-2xl py-4 pl-6 pr-28 text-[15px] text-[#5A5A5A] focus:outline-none shadow-sm transition-all focus:border-[#E9B87D]"
+              className={cn(
+                "w-full bg-[#FAF9F6] border rounded-2xl py-4 pl-6 pr-28 text-[15px] text-[#5A5A5A] focus:outline-none transition-all duration-300",
+                isInputFocused
+                  ? "border-[#E9B87D] shadow-[0_0_0_4px_rgba(233,184,125,0.12)]"
+                  : "border-gray-100 shadow-sm"
+              )}
             />
             
             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-5">
@@ -296,8 +347,8 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
                 type="button"
                 onClick={startRecording}
                 className={cn(
-                  "transition-colors bg-transparent border-none cursor-pointer p-1",
-                  isRecording ? "text-red-500 scale-110 animate-pulse" : "text-gray-400 hover:text-gray-600"
+                  "transition-all duration-200 bg-transparent border-none cursor-pointer p-1",
+                  isRecording ? "text-red-500 scale-110 animate-pulse" : "text-gray-400 hover:text-gray-600 hover:scale-105"
                 )}
               >
                 <Mic className="h-5 w-5" />
@@ -307,8 +358,11 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
                 onClick={handleSend}
                 disabled={isWaitingResponse}
                 className={cn(
-                  "transition-colors bg-transparent border-none cursor-pointer p-1",
-                  isWaitingResponse ? "text-gray-200 cursor-not-allowed" : "text-[#3D3D3D] hover:text-black"
+                  "transition-all duration-200 bg-transparent border-none cursor-pointer p-1",
+                  isWaitingResponse
+                    ? "text-gray-200 cursor-not-allowed"
+                    : "text-[#3D3D3D] hover:text-black hover:scale-110",
+                  justSent && "scale-125 text-[#E9B87D]"
                 )}
               >
                 <Send className="h-5 w-5" />
@@ -342,6 +396,37 @@ export function ChatInterface({ onBack }: ChatInterfaceProps) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PresenceIndicator — the signature "breathing" loading state.
+// Three dots that expand and contract slowly like an inhale/exhale, instead of
+// a generic fast-bouncing typing indicator. Paired with a slow-cycling caption.
+// ─────────────────────────────────────────────────────────────────────────────
+function PresenceIndicator({ caption }: { caption: string }) {
+  return (
+    <div className="flex items-center gap-3 py-1">
+      <div className="flex items-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="kaal-breathe block w-2 h-2 rounded-full bg-[#E9B87D]"
+            style={{
+              animation: "kaal-breathe 2.6s ease-in-out infinite",
+              animationDelay: `${i * 0.35}s`,
+            }}
+          />
+        ))}
+      </div>
+      <span
+        key={caption}
+        className="text-xs text-[#A78A63] font-medium tracking-wide"
+        style={{ animation: "kaal-caption-fade 2.2s ease-in-out" }}
+      >
+        {caption}
+      </span>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MessageBubble Component
 // ─────────────────────────────────────────────────────────────────────────────
 function MessageBubble({ 
@@ -349,13 +434,15 @@ function MessageBubble({
   idx, 
   isPremium,
   userEmail,
-  onShowPaywall 
+  onShowPaywall,
+  presenceCaption,
 }: { 
   message: Message; 
   idx: number; 
   isPremium: boolean;
   userEmail?: string;
-  onShowPaywall: () => void 
+  onShowPaywall: () => void;
+  presenceCaption: string;
 }) {
   const isUser = message.role === "user"
 
@@ -377,7 +464,15 @@ function MessageBubble({
     }
   }, [])
 
-  if (message.isLoading) return null
+  if (message.isLoading) {
+    return (
+      <div className="flex w-full justify-start">
+        <div className="bg-[#F0EAE2]/70 rounded-[32px] px-7 py-5 shadow-sm w-fit">
+          <PresenceIndicator caption={presenceCaption} />
+        </div>
+      </div>
+    )
+  }
 
   const handlePlayVoice = async () => {
     if (!isPremium) {
@@ -448,21 +543,27 @@ function MessageBubble({
   return (
     <div
       className={cn(
-        "flex w-full animate-in fade-in slide-in-from-top-2 duration-500",
+        "flex w-full",
         isUser ? "justify-end" : "justify-start"
       )}
     >
       <div
         className={cn(
-          "bg-[#F0EAE2] rounded-[32px] px-6 py-6 sm:px-10 shadow-sm transition-all duration-300 w-fit relative",
-          isPremium && !isUser ? "border border-amber-500/20 shadow-amber-500/[0.01]" : "",
+          "rounded-[32px] px-6 py-6 sm:px-10 transition-all duration-300 w-fit relative",
+          isUser
+            ? "bg-[#FAF6EF] border border-[#E9B87D]/15 shadow-[0_2px_16px_-6px_rgba(233,184,125,0.18)]"
+            : "bg-[#F0EAE2] shadow-sm",
+          isPremium && !isUser ? "border border-amber-500/20 shadow-amber-500/[0.04]" : "",
           isUser 
             ? "text-right max-w-[92%] sm:max-w-[85%] md:max-w-[80%]" 
             : "text-left max-w-[92%] sm:max-w-[85%] md:max-w-[80%]"
         )}
       >
         <div className="flex items-center gap-2 mb-2 justify-between">
-          <h2 className="text-base font-bold text-[#3D3D3D] leading-tight">
+          <h2 className={cn(
+            "text-base font-bold leading-tight",
+            isUser ? "text-[#5A4A35]" : "text-[#3D3D3D] font-serif"
+          )}>
             {isUser ? "You" : idx === 0 ? "I hear you." : "KAAL AI"}
           </h2>
           

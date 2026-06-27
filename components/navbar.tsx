@@ -30,6 +30,9 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
   // Render desktop-specific conditional rendering logic
   const shouldShowLogo = (pathname === "/" || forceLogo) && !showBackButton
 
+  // Chat page gets a stripped-down header: logo only, no hamburger, no profile/login.
+  const isChatPage = pathname === "/chat"
+
   const { user, isLoggedIn, logout } = useAuth()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
@@ -69,8 +72,8 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
         {/* ── LEFT SIDE ── */}
         <div className="flex flex-1 items-center gap-2 z-10">
 
-          {/* Mobile hamburger — visible when logo setup requires drawer support */}
-          {shouldShowLogo && (
+          {/* Mobile hamburger — hidden entirely on chat page */}
+          {shouldShowLogo && !isChatPage && (
             <button
               className="md:hidden text-gray-800 bg-transparent border-none cursor-pointer p-1 -ml-1"
               onClick={() => setIsMobileOpen(true)}
@@ -81,7 +84,14 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
 
           {/* Core Action Toggle Point: Back Icon vs Brand Logo */}
           <div className="flex items-center gap-2">
-            {!shouldShowLogo ? (
+            {isChatPage ? (
+              // Chat page: always show the logo on the left on desktop too, never the back button/hamburger.
+              <div className="hidden md:flex items-center gap-2">
+                <Link href="/" className="flex items-center gap-2">
+                  <KaalLogo />
+                </Link>
+              </div>
+            ) : !shouldShowLogo ? (
               <button
                 onClick={handleBackNavigation}
                 className="flex items-center gap-2 text-[#333333] hover:opacity-70 transition-opacity group bg-transparent border-none cursor-pointer p-1"
@@ -115,9 +125,9 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
           </Link>
         </div>
 
-        {/* ── RIGHT SIDE ── */}
+        {/* ── RIGHT SIDE (hidden entirely on chat page) ── */}
         <div className="flex flex-1 justify-end items-center gap-2 z-10">
-          {isLoggedIn && user ? (
+          {isChatPage ? null : isLoggedIn && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 outline-none group bg-transparent border-none cursor-pointer relative">
@@ -267,130 +277,132 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
         </div>
       </header>
 
-      {/* ───────────── MOBILE DRAWER ───────────── */}
-      <div
-        className={`
-          fixed top-0 left-0 h-full w-[85%] bg-[#FBF9F6] shadow-2xl z-[300]
-          transform transition-transform duration-500 ease-in-out md:hidden
-          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
-      >
-        <div className="flex flex-col h-full p-8">
-          <button
-            onClick={() => setIsMobileOpen(false)}
-            className="self-end p-2 text-gray-400 cursor-pointer bg-transparent border-none"
-          >
-            <X className="w-8 h-8" />
-          </button>
+      {/* ───────────── MOBILE DRAWER (never rendered on chat page) ───────────── */}
+      {!isChatPage && (
+        <div
+          className={`
+            fixed top-0 left-0 h-full w-[85%] bg-[#FBF9F6] shadow-2xl z-[300]
+            transform transition-transform duration-500 ease-in-out md:hidden
+            ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+          `}
+        >
+          <div className="flex flex-col h-full p-8">
+            <button
+              onClick={() => setIsMobileOpen(false)}
+              className="self-end p-2 text-gray-400 cursor-pointer bg-transparent border-none"
+            >
+              <X className="w-8 h-8" />
+            </button>
 
-          <div className="mt-12 flex-1">
-            {isLoggedIn && user ? (
-              <div className="space-y-8">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-gray-400 mb-1">Welcome back</p>
-                    <h2 className={`text-3xl font-serif ${isTargetPremiumUser ? 'text-amber-900' : 'text-gray-800'}`}>Hi, {user.name}</h2>
-                  </div>
-                  {isTargetPremiumUser && (
-                    <span className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black uppercase tracking-wider rounded-full flex items-center gap-1 shadow-md mt-1">
-                      <Crown className="w-3 h-3 fill-current" /> Premium
-                    </span>
-                  )}
-                </div>
-
-                <nav className="flex flex-col gap-6">
-                  <button
-                    onClick={() => handleMobileNavigate("/meditation")}
-                    className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full flex items-center justify-between group ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
-                  >
-                    <span>Meditation</span>
-                  </button>
-                  <button
-                    onClick={() => handleMobileNavigate("/reflection")}
-                    className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
-                  >
-                    Reflect &amp; Connect
-                  </button>
-                  <button
-                    onClick={() => handleMobileNavigate("/events")}
-                    className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
-                  >
-                    Events
-                  </button>
-                  <button
-                    onClick={() => handleMobileNavigate("/history")}
-                    className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
-                  >
-                    History
-                  </button>
-                  <button
-                    onClick={() => handleMobileNavigate("/profile")}
-                    className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
-                  >
-                    Profile
-                  </button>
-                  <hr className={isTargetPremiumUser ? 'border-amber-200/60 my-2' : 'border-gray-200 my-2'} />
-
-                  {/* HIDDEN IN MOBILE DRAWER: Wrapped with 'hidden md:flex' */}
-                  <div className="hidden md:flex">
-                    {!isTargetPremiumUser ? (
-                      <button
-                        onClick={() => handleMobileNavigate("/pricing")}
-                        className="text-left text-xl text-amber-600 bg-amber-500/5 p-3 rounded-xl border border-amber-500/10 font-bold w-full flex items-center gap-2"
-                      >
-                        <Crown className="w-5 h-5 text-amber-500" /> Plans &amp; Pricing
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleMobileNavigate("/pricing")}
-                        className="text-left text-xl text-amber-800 bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-100 p-4 rounded-xl border border-amber-200 shadow-sm font-bold w-full flex items-center gap-2"
-                      >
-                        <CalendarCheck className="w-5 h-5 text-amber-600" /> Check Validity &amp; Plans
-                      </button>
+            <div className="mt-12 flex-1">
+              {isLoggedIn && user ? (
+                <div className="space-y-8">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-gray-400 mb-1">Welcome back</p>
+                      <h2 className={`text-3xl font-serif ${isTargetPremiumUser ? 'text-amber-900' : 'text-gray-800'}`}>Hi, {user.name}</h2>
+                    </div>
+                    {isTargetPremiumUser && (
+                      <span className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black uppercase tracking-wider rounded-full flex items-center gap-1 shadow-md mt-1">
+                        <Crown className="w-3 h-3 fill-current" /> Premium
+                      </span>
                     )}
                   </div>
-                </nav>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-8 items-start">
-                <button
-                  className="text-left text-4xl font-serif text-gray-800 bg-transparent cursor-pointer border-none"
-                  onClick={() => {
-                    setIsMobileOpen(false)
-                    setShowLoginModal(true)
-                  }}
-                >
-                  Log in
-                </button>
-                {/* HIDDEN IN MOBILE DRAWER: Wrapped with 'hidden md:flex' */}
-                <div className="hidden md:flex">
-                  <button
-                    onClick={() => handleMobileNavigate("/pricing")}
-                    className="text-left text-xl text-amber-600 bg-transparent border-none cursor-pointer font-bold flex items-center gap-2"
-                  >
-                    <Crown className="w-5 h-5 text-amber-500" /> Plans &amp; Pricing
-                  </button>
+
+                  <nav className="flex flex-col gap-6">
+                    <button
+                      onClick={() => handleMobileNavigate("/meditation")}
+                      className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full flex items-center justify-between group ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
+                    >
+                      <span>Meditation</span>
+                    </button>
+                    <button
+                      onClick={() => handleMobileNavigate("/reflection")}
+                      className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
+                    >
+                      Reflect &amp; Connect
+                    </button>
+                    <button
+                      onClick={() => handleMobileNavigate("/events")}
+                      className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
+                    >
+                      Events
+                    </button>
+                    <button
+                      onClick={() => handleMobileNavigate("/history")}
+                      className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
+                    >
+                      History
+                    </button>
+                    <button
+                      onClick={() => handleMobileNavigate("/profile")}
+                      className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
+                    >
+                      Profile
+                    </button>
+                    <hr className={isTargetPremiumUser ? 'border-amber-200/60 my-2' : 'border-gray-200 my-2'} />
+
+                    {/* HIDDEN IN MOBILE DRAWER: Wrapped with 'hidden md:flex' */}
+                    <div className="hidden md:flex">
+                      {!isTargetPremiumUser ? (
+                        <button
+                          onClick={() => handleMobileNavigate("/pricing")}
+                          className="text-left text-xl text-amber-600 bg-amber-500/5 p-3 rounded-xl border border-amber-500/10 font-bold w-full flex items-center gap-2"
+                        >
+                          <Crown className="w-5 h-5 text-amber-500" /> Plans &amp; Pricing
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleMobileNavigate("/pricing")}
+                          className="text-left text-xl text-amber-800 bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-100 p-4 rounded-xl border border-amber-200 shadow-sm font-bold w-full flex items-center gap-2"
+                        >
+                          <CalendarCheck className="w-5 h-5 text-amber-600" /> Check Validity &amp; Plans
+                        </button>
+                      )}
+                    </div>
+                  </nav>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-8 items-start">
+                  <button
+                    className="text-left text-4xl font-serif text-gray-800 bg-transparent cursor-pointer border-none"
+                    onClick={() => {
+                      setIsMobileOpen(false)
+                      setShowLoginModal(true)
+                    }}
+                  >
+                    Log in
+                  </button>
+                  {/* HIDDEN IN MOBILE DRAWER: Wrapped with 'hidden md:flex' */}
+                  <div className="hidden md:flex">
+                    <button
+                      onClick={() => handleMobileNavigate("/pricing")}
+                      className="text-left text-xl text-amber-600 bg-transparent border-none cursor-pointer font-bold flex items-center gap-2"
+                    >
+                      <Crown className="w-5 h-5 text-amber-500" /> Plans &amp; Pricing
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {isLoggedIn && user && (
+              <button
+                onClick={() => {
+                  logout()
+                  setIsMobileOpen(false)
+                }}
+                className="flex items-center gap-2 text-red-500 font-bold text-sm tracking-widest cursor-pointer mt-auto border-none bg-transparent"
+              >
+                <LogOut size={18} /> LOGOUT
+              </button>
             )}
           </div>
-
-          {isLoggedIn && user && (
-            <button
-              onClick={() => {
-                logout()
-                setIsMobileOpen(false)
-              }}
-              className="flex items-center gap-2 text-red-500 font-bold text-sm tracking-widest cursor-pointer mt-auto border-none bg-transparent"
-            >
-              <LogOut size={18} /> LOGOUT
-            </button>
-          )}
         </div>
-      </div>
+      )}
 
-      {/* Drawer backdrop */}
-      {isMobileOpen && (
+      {/* Drawer backdrop (never rendered on chat page) */}
+      {!isChatPage && isMobileOpen && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[250] md:hidden"
           onClick={() => setIsMobileOpen(false)}
