@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ArrowLeft, LogOut, User, Sparkles, Menu, X, History, Crown, CalendarCheck } from "lucide-react"
+import { ArrowLeft, LogOut, User, Sparkles, Menu, X, History, Crown, CalendarCheck, Mail } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 
 import {
@@ -47,7 +47,10 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
   }, [user, isLoggedIn])
 
   // STRICT TESTING RULE: Only your exact email gets premium layout token override
-  const isTargetPremiumUser = isLoggedIn && user && user.email === "bhonglepratish@gmail.com"|| "piyu232004@gmail.com";
+  const isTargetPremiumUser =
+    isLoggedIn &&
+    user &&
+    (user.email === "bhonglepratish@gmail.com" || user.email === "piyu232004@gmail.com")
 
   const handleBackNavigation = () => {
     if (customBackAction) {
@@ -85,12 +88,21 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
           {/* Core Action Toggle Point: Back Icon vs Brand Logo */}
           <div className="flex items-center gap-2">
             {isChatPage ? (
-              // Chat page: always show the logo on the left on desktop too, never the back button/hamburger.
-              <div className="hidden md:flex items-center gap-2">
-                <Link href="/" className="flex items-center gap-2">
-                  <KaalLogo />
-                </Link>
-              </div>
+              // Chat page: show a back button on the left (mobile + desktop), logo stays centered/desktop as before.
+              <>
+                <button
+                  onClick={handleBackNavigation}
+                  className="flex items-center gap-2 text-[#333333] hover:opacity-70 transition-opacity group bg-transparent border-none cursor-pointer p-1"
+                >
+                  <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+                  <span className="text-xs font-bold uppercase tracking-widest hidden sm:inline-block">Back</span>
+                </button>
+                <div className="hidden md:flex items-center gap-2">
+                  <Link href="/" className="flex items-center gap-2">
+                    <KaalLogo />
+                  </Link>
+                </div>
+              </>
             ) : !shouldShowLogo ? (
               <button
                 onClick={handleBackNavigation}
@@ -190,6 +202,15 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
                 >
                   <History className={`h-4 w-4 mr-2 ${isTargetPremiumUser ? 'text-amber-500' : 'text-stone-400'}`} />
                   History
+                </DropdownMenuItem>
+
+                {/* CONTACT */}
+                <DropdownMenuItem
+                  onSelect={() => router.push("/contact")}
+                  className={`cursor-pointer rounded-lg flex items-center text-sm font-medium ${isTargetPremiumUser ? 'text-amber-900/80 hover:text-amber-950 hover:bg-amber-500/10' : 'text-stone-600 hover:text-stone-950 hover:bg-stone-50'}`}
+                >
+                  <Mail className={`h-4 w-4 mr-2 ${isTargetPremiumUser ? 'text-amber-500' : 'text-stone-400'}`} />
+                  Contact
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator className={isTargetPremiumUser ? 'bg-amber-100 my-2' : 'bg-stone-100 my-2'} />
@@ -333,6 +354,12 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
                       className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
                     >
                       History
+                    </button>
+                    <button
+                      onClick={() => handleMobileNavigate("/contact")}
+                      className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
+                    >
+                      Contact
                     </button>
                     <button
                       onClick={() => handleMobileNavigate("/profile")}
