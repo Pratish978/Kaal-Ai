@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ArrowLeft, LogOut, User, Sparkles, Menu, X, History, Crown, CalendarCheck, Mail } from "lucide-react"
+import { ArrowLeft, LogOut, User, Sparkles, Menu, X, History, Crown, CalendarCheck, Mail, BookOpen } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 
 import {
@@ -195,6 +195,15 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
                   Profile
                 </DropdownMenuItem>
 
+                {/* DAILY SHLOKAS */}
+                <DropdownMenuItem
+                  onSelect={() => router.push("/DailyShlokas")}
+                  className={`cursor-pointer rounded-lg flex items-center text-sm font-medium ${isTargetPremiumUser ? 'text-amber-900/80 hover:text-amber-950 hover:bg-amber-500/10' : 'text-stone-600 hover:text-stone-950 hover:bg-stone-50'}`}
+                >
+                  <BookOpen className={`h-4 w-4 mr-2 ${isTargetPremiumUser ? 'text-amber-500' : 'text-stone-400'}`} />
+                  Daily Shlokas
+                </DropdownMenuItem>
+
                 {/* HISTORY */}
                 <DropdownMenuItem
                   onSelect={() => router.push("/history")}
@@ -366,6 +375,12 @@ export function Navbar({ showBackButton = false, customBackAction, forceLogo = f
                       className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
                     >
                       Profile
+                    </button>
+                    <button
+                      onClick={() => handleMobileNavigate("/DailyShlokas")}
+                      className={`text-left text-xl bg-transparent border-none cursor-pointer font-normal w-full ${isTargetPremiumUser ? 'text-amber-900/90' : 'text-gray-700'}`}
+                    >
+                      Daily Shlokas
                     </button>
                     <hr className={isTargetPremiumUser ? 'border-amber-200/60 my-2' : 'border-gray-200 my-2'} />
 
